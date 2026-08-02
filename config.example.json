@@ -1,0 +1,12 @@
+{
+  "host": "127.0.0.1",
+  "port": 7860,
+  "language": "zh-TW",
+  "self_learning": true,
+  "learning_rate": 0.025,
+  "temperature": 0.78,
+  "top_k": 32,
+  "max_new_tokens": 180,
+  "max_crawl_pages": 8,
+  "request_timeout": 10.0
+}

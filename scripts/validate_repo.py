@@ -1,0 +1,64 @@
+from __future__ import annotations
+
+import json
+import re
+import sys
+import tempfile
+import xml.etree.ElementTree as ET
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from momo_lm.image_model import TinyCanvasModel  # noqa: E402
+from momo_lm.model import NeuralTextModel  # noqa: E402
+
+
+def fail(message: str) -> None:
+    raise SystemExit(f"validation failed: {message}")
+
+
+def main() -> None:
+    required = [
+        "README.md",
+        "LICENSE",
+        "pyproject.toml",
+        "momo_lm/web/index.html",
+        "momo_lm/web/app.css",
+        "momo_lm/web/app.js",
+        "momo_lm/assets/weights/momo-text-base.npz",
+        "momo_lm/assets/weights/momo-image-base.npz",
+        ".github/workflows/ci.yml",
+        ".github/workflows/release.yml",
+    ]
+    for relative in required:
+        if not (ROOT / relative).is_file():
+            fail(f"missing {relative}")
+
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    local_links = re.findall(r"(?:src|href)=?[\"']?([^\"'> )]+)|\]\(([^)]+)\)", readme)
+    for pair in local_links:
+        target = next((part for part in pair if part), "").split("#", 1)[0]
+        if target and not re.match(r"(?:https?:|#|mailto:)", target) and not (ROOT / target).exists():
+            fail(f"README references missing path: {target}")
+
+    for svg in (ROOT / "docs" / "assets").glob("*.svg"):
+        ET.parse(svg)
+    json.loads((ROOT / "config.example.json").read_text(encoding="utf-8"))
+
+    text_model = NeuralTextModel.load(ROOT / "momo_lm/assets/weights/momo-text-base.npz")
+    image_model = TinyCanvasModel.load(ROOT / "momo_lm/assets/weights/momo-image-base.npz")
+    if text_model.parameter_count != 107_235:
+        fail(f"unexpected text model parameter count: {text_model.parameter_count}")
+    if image_model.inspect()["parameters"] < 1_000:
+        fail("image checkpoint is incomplete")
+    with tempfile.TemporaryDirectory() as directory:
+        output = Path(directory) / "smoke.png"
+        image_model.generate("validation", 128, 128, seed=1).save(output)
+        if output.stat().st_size < 1_000:
+            fail("generated image is unexpectedly small")
+    print("repository validation passed")
+
+
+if __name__ == "__main__":
+    main()

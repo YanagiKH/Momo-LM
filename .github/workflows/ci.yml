@@ -1,0 +1,72 @@
+name: Repository validation
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Python ${{ matrix.python }} · ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+      - name: Install project and validation tools
+        run: python -m pip install --upgrade pip && python -m pip install -e ".[dev]"
+      - name: Compile all Python sources
+        run: python -m compileall -q momo_lm scripts tests
+      - name: Static analysis
+        run: ruff check .
+      - name: Validate repository assets and checkpoints
+        run: python scripts/validate_repo.py
+      - name: Unit and HTTP integration tests
+        run: python -m unittest discover -s tests -v
+      - name: Build wheel and source distribution
+        run: python -m build
+      - name: Validate distributions
+        run: python -m pip install --force-reinstall dist/*.whl
+        if: runner.os == 'Linux'
+      - name: Installed CLI smoke test
+        run: momo --home .ci-home init && momo --home .ci-home inspect
+
+  package-smoke:
+    name: Executable smoke · ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install --upgrade pip pyinstaller && python -m pip install .
+      - run: pyinstaller --clean --noconfirm packaging/momo_lm.spec
+      - name: Linux executable smoke test
+        if: runner.os == 'Linux'
+        run: ./dist/Momo-LM/Momo-LM --home .package-home init && ./dist/Momo-LM/Momo-LM --home .package-home inspect
+      - name: Windows executable smoke test
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          .\dist\Momo-LM\Momo-LM.exe --home .package-home init
+          .\dist\Momo-LM\Momo-LM.exe --home .package-home inspect

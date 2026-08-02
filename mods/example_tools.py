@@ -1,0 +1,19 @@
+"""Example Momo-LM mod. Copy this file to ~/.momo-lm/mods/ to load it."""
+
+from datetime import datetime
+
+from momo_lm.mods import ModSpec
+
+
+def current_time(argument: str) -> str:
+    label = argument or "本機時間"
+    return f"{label}：{datetime.now().astimezone().isoformat(timespec='seconds')}"
+
+
+def register() -> ModSpec:
+    return ModSpec(
+        name="Example Tools",
+        version="1.0.0",
+        description="A minimal trusted mod that adds /time.",
+        commands={"/time": current_time},
+    )

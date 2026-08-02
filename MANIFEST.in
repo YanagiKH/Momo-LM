@@ -1,0 +1,3 @@
+recursive-include momo_lm/web *
+recursive-include momo_lm/assets *
+include README.md LICENSE

@@ -7,3 +7,4 @@
 *.iss text eol=crlf
 *.npz binary
 *.png binary
+*.webp binary

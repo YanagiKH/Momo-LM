@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "momo-lm"
+version = "0.1.0"
+description = "A small, local-first, trainable language model and AI workbench built without cloud APIs."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{name = "Momo-LM contributors"}]
+keywords = ["ai", "language-model", "local-ai", "machine-learning", "open-source"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+  "numpy>=1.26,<3",
+  "Pillow>=10,<13",
+]
+
+[project.optional-dependencies]
+dev = ["build>=1.2,<2", "pyinstaller>=6.10,<7", "ruff>=0.9,<1"]
+
+[project.scripts]
+momo = "momo_lm.cli:main"
+momo-lm = "momo_lm.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/YanagiKH/Momo-LM"
+Repository = "https://github.com/YanagiKH/Momo-LM"
+Issues = "https://github.com/YanagiKH/Momo-LM/issues"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["momo_lm*"]
+
+[tool.setuptools.package-data]
+momo_lm = ["web/*", "assets/weights/*", "assets/corpus/*", "assets/mods/*"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501"]

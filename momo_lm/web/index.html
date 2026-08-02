@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0d0c1d">
+  <title>Momo-LM — Local AI Workbench</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <div class="noise"></div>
+  <aside class="sidebar">
+    <div class="brand"><span class="mark">M</span><div><strong>Momo-LM</strong><small>LOCAL AI WORKBENCH</small></div></div>
+    <nav id="nav">
+      <button class="active" data-panel="chat"><span>◌</span> 對話</button>
+      <button data-panel="learn"><span>↗</span> 學習資料</button>
+      <button data-panel="image"><span>◇</span> 圖像生成</button>
+      <button data-panel="speech"><span>♫</span> 文字轉語音</button>
+      <button data-panel="weights"><span>▦</span> 權重觀察</button>
+      <button data-panel="mods"><span>⬡</span> Mods</button>
+    </nav>
+    <div class="status-card"><i id="statusDot"></i><div><b id="statusText">正在連接</b><small id="modelMeta">讀取本機模型…</small></div></div>
+    <button class="theme" id="theme">◐　切換外觀</button>
+  </aside>
+
+  <main>
+    <header><div><p class="eyebrow">NO API KEY · LOCAL FIRST</p><h1 id="pageTitle">與 Momo 對話</h1></div><div class="pill">自我學習 <label class="switch"><input id="learnToggle" type="checkbox" checked><span></span></label></div></header>
+
+    <section id="chat" class="panel active">
+      <div id="messages" class="messages">
+        <article class="message momo"><div class="avatar">M</div><div><b>Momo</b><p>你好，我已在本機準備完成。你可以和我對話、餵入資料、訓練權重，或載入自己的模組。</p></div></article>
+      </div>
+      <form id="chatForm" class="composer"><textarea id="chatInput" rows="1" maxlength="12000" placeholder="輸入訊息…（Enter 送出，Shift+Enter 換行）"></textarea><button type="submit" aria-label="send">↑</button></form>
+    </section>
+
+    <section id="learn" class="panel">
+      <div class="grid two">
+        <article class="card"><span class="card-icon">Aa</span><h2>餵入文字</h2><p>內容會切塊存入本機知識庫，可同時更新語言模型權重。</p><input id="source" placeholder="資料來源名稱" value="web-ui"><textarea id="learnText" rows="12" placeholder="貼上文章、筆記、問答或垂直領域資料…"></textarea><div class="row"><label><input id="trainNow" type="checkbox" checked> 同時訓練</label><select id="epochs"><option>1</option><option selected>3</option><option>5</option><option>10</option></select><button id="ingestBtn" class="primary">開始學習</button></div></article>
+        <article class="card"><span class="card-icon">◎</span><h2>受控網頁學習</h2><p>遵守 robots.txt，只讀取同一網域的 HTML，頁數與逾時皆有限制。</p><input id="crawlUrl" type="url" placeholder="https://example.com/docs"><div class="row"><label>頁數 <input id="crawlPages" type="number" min="1" max="50" value="5"></label><label><input id="crawlTrain" type="checkbox"> 更新權重</label></div><button id="crawlBtn" class="primary wide">讀取網站</button><pre id="learnResult">等待資料…</pre></article>
+      </div>
+    </section>
+
+    <section id="image" class="panel">
+      <div class="grid studio"><article class="card"><span class="card-icon">◇</span><h2>TinyCanvas 本機生成器</h2><p>用內建提示詞條件座標網路產生抽象概念圖，不連接雲端服務。</p><textarea id="imagePrompt" rows="6" placeholder="例如：夜色中的粉紫色未來城市，柔和光線"></textarea><div class="row"><select id="imageSize"><option value="512">512 × 512</option><option value="768">768 × 768</option><option value="1024">1024 × 1024</option></select><input id="imageSeed" type="number" placeholder="Seed（選填）"></div><button id="imageBtn" class="primary wide">生成圖像</button></article><article class="preview card"><div id="imageEmpty"><span>◇</span><p>生成結果會顯示在這裡</p></div><img id="imageOutput" alt="Momo-LM generated image"><a id="downloadImage" class="download" download>下載 PNG</a></article></div>
+    </section>
+
+    <section id="speech" class="panel">
+      <article class="card narrow"><span class="card-icon">♫</span><h2>離線文字轉語音</h2><p>優先使用 Windows SAPI 或 Linux eSpeak；沒有系統語音時仍可輸出聲音波形。</p><textarea id="speechText" rows="8" placeholder="輸入要朗讀的內容…"></textarea><label>語速 <input id="speechRate" type="range" min="80" max="300" value="170"><output id="rateOutput">170</output></label><button id="speechBtn" class="primary wide">產生語音</button><audio id="audioOutput" controls></audio><small id="speechEngine"></small></article>
+    </section>
+
+    <section id="weights" class="panel">
+      <div class="stats" id="stats"></div><article class="card"><div class="card-head"><div><h2>文字模型權重</h2><p>每層的參數量、分布與張量形狀。</p></div><button id="refreshWeights">重新整理</button></div><div id="layers" class="layers"></div></article>
+    </section>
+
+    <section id="mods" class="panel">
+      <article class="card"><div class="card-head"><div><span class="card-icon">⬡</span><h2>模組管理</h2><p>把可信任的 Python 模組放入執行目錄的 <code>mods/</code> 後重新載入。</p></div><button id="reloadMods" class="primary">重新載入</button></div><div id="modList" class="mod-list"></div></article>
+    </section>
+    <div id="toast" role="status"></div>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
