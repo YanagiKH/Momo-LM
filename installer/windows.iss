@@ -27,8 +27,8 @@ SetupLogging=yes
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
-Name: "chinesetraditional"; MessagesFile: "compiler:Languages\ChineseTraditional.isl"
-Name: "japanese"; MessagesFile: "compiler:Languages\Japanese.isl"
+Name: "chinesetraditional"; MessagesFile: "{#SourcePath}\languages\ChineseTraditional.isl"
+Name: "japanese"; MessagesFile: "{#SourcePath}\languages\Japanese.isl"
 
 [Files]
 Source: "..\dist\Momo-LM\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs

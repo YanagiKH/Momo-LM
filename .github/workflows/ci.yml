@@ -70,3 +70,21 @@ jobs:
         run: |
           .\dist\Momo-LM\Momo-LM.exe --home .package-home init
           .\dist\Momo-LM\Momo-LM.exe --home .package-home inspect
+      - name: Windows installer compile smoke test
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          MOMO_VERSION: 0.0.0-ci
+        run: |
+          $compiler = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $compiler)) {
+            throw "Inno Setup compiler was not found at $compiler"
+          }
+          New-Item -ItemType Directory -Force release | Out-Null
+          & $compiler "installer\windows.iss"
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+          if (-not (Test-Path "release\Momo-LM-Setup-Windows-x64.exe")) {
+            throw "Inno Setup did not produce the Windows installer"
+          }
