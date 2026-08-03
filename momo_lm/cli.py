@@ -3,8 +3,12 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import time
 from pathlib import Path
 
+import numpy as np
+
+from .backend import get_backend
 from .bootstrap import initialize_weights
 from .config import MomoConfig
 from .runtime import MomoRuntime
@@ -52,6 +56,10 @@ def _parser() -> argparse.ArgumentParser:
     speech.add_argument("--rate", type=int, default=170)
 
     sub.add_parser("inspect", help="Print model weights and runtime statistics")
+    sub.add_parser("backend", help="Show the active tensor and inference backend")
+    benchmark = sub.add_parser("benchmark", help="Benchmark the active matrix kernel")
+    benchmark.add_argument("--size", type=int, default=256)
+    benchmark.add_argument("--rounds", type=int, default=5)
     init = sub.add_parser("init", help="Create config and copy bundled starter weights")
     init.add_argument("--force", action="store_true")
     return parser
@@ -78,13 +86,42 @@ def _terminal_chat(runtime: MomoRuntime, initial: str = "") -> None:
             print(f"Momo > {runtime.chat(message)['response']}")
 
 
+def _benchmark(size: int, rounds: int) -> dict[str, object]:
+    size = max(16, min(size, 2048))
+    rounds = max(1, min(rounds, 100))
+    backend = get_backend()
+    rng = np.random.default_rng(20260803)
+    left = rng.normal(size=(size, size)).astype(np.float32)
+    right = rng.normal(size=(size, size)).astype(np.float32)
+    backend.matmul(left, right)
+    started = time.perf_counter()
+    for _ in range(rounds):
+        backend.matmul(left, right)
+    elapsed = time.perf_counter() - started
+    operations = 2.0 * size**3 * rounds
+    return {
+        "backend": backend.describe(),
+        "matrix": [size, size],
+        "rounds": rounds,
+        "seconds": elapsed,
+        "gflops": operations / max(elapsed, 1e-9) / 1_000_000_000,
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = _parser()
     arguments = parser.parse_args(argv)
-    config = _config(arguments)
     if arguments.command == "init":
+        config = _config(arguments)
         print(json.dumps(initialize_weights(config, force=arguments.force), ensure_ascii=False, indent=2))
         return 0
+    if arguments.command == "backend":
+        print(json.dumps(get_backend().describe(), ensure_ascii=False, indent=2))
+        return 0
+    if arguments.command == "benchmark":
+        print(json.dumps(_benchmark(arguments.size, arguments.rounds), ensure_ascii=False, indent=2))
+        return 0
+    config = _config(arguments)
     runtime = MomoRuntime(config)
     try:
         if arguments.command in {None, "serve"}:

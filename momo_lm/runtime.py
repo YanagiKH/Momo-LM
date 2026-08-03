@@ -148,8 +148,9 @@ class MomoRuntime:
 
     def status(self) -> dict[str, Any]:
         return {
-            "version": "0.1.0",
+            "version": "0.2.0",
             "home": str(self.config.home),
+            "compute_backend": self.model.backend.describe(),
             "weights": self.model.inspect(),
             "image_weights": self.image_model.inspect(),
             "knowledge": self.store.stats(),

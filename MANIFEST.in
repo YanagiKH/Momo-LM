@@ -1,3 +1,7 @@
 recursive-include momo_lm/web *
 recursive-include momo_lm/assets *
-include README.md LICENSE
+recursive-include native *.c *.cpp *.h *.rs Cargo.toml Cargo.lock CMakeLists.txt
+recursive-include docs *.md *.svg *.webp
+recursive-include installer *
+recursive-include scripts *.py *.sh *.ps1
+include README.md LICENSE SECURITY.md CONTRIBUTING.md VERSION config.example.json setup.py MomoLM.py

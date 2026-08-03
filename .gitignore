@@ -6,6 +6,7 @@ __pycache__/
 .venv/
 venv/
 build/
+target/
 dist/
 release/
 *.log
@@ -16,3 +17,6 @@ data/runtime/
 checkpoints/*
 !checkpoints/.gitkeep
 mods/__pycache__/
+momo_lm/_native*.so
+momo_lm/_native*.pyd
+momo_lm/_native_libs/

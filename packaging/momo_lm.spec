@@ -1,18 +1,21 @@
 from pathlib import Path
 
+from PyInstaller.utils.hooks import collect_dynamic_libs
+
 root = Path(SPECPATH).parent
 
 datas = [
     (str(root / "momo_lm" / "web"), "momo_lm/web"),
     (str(root / "momo_lm" / "assets"), "momo_lm/assets"),
 ]
+binaries = collect_dynamic_libs("momo_lm")
 
 a = Analysis(
     [str(root / "packaging" / "entrypoint.py")],
     pathex=[str(root)],
-    binaries=[],
+    binaries=binaries,
     datas=datas,
-    hiddenimports=["momo_lm"],
+    hiddenimports=["momo_lm", "momo_lm._native"],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

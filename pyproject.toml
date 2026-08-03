@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "momo-lm"
-version = "0.1.0"
-description = "A small, local-first, trainable language model and AI workbench built without cloud APIs."
+version = "0.2.0"
+description = "A local-first trainable AI model with C, C++ and Rust accelerated inference."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
@@ -14,7 +14,10 @@ keywords = ["ai", "language-model", "local-ai", "machine-learning", "open-source
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: C",
+  "Programming Language :: C++",
+  "Programming Language :: Rust",
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
@@ -36,12 +39,13 @@ Issues = "https://github.com/YanagiKH/Momo-LM/issues"
 
 [tool.setuptools]
 include-package-data = true
+py-modules = ["MomoLM"]
 
 [tool.setuptools.packages.find]
 include = ["momo_lm*"]
 
 [tool.setuptools.package-data]
-momo_lm = ["web/*", "assets/weights/*", "assets/corpus/*", "assets/mods/*"]
+momo_lm = ["web/*", "assets/weights/*", "assets/corpus/*", "assets/mods/*", "_native_libs/*"]
 
 [tool.ruff]
 target-version = "py310"

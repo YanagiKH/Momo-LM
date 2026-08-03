@@ -8,6 +8,8 @@ import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+import numpy as np
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
@@ -29,6 +31,19 @@ def main() -> None:
         "momo_lm/web/app.js",
         "momo_lm/assets/weights/momo-text-base.npz",
         "momo_lm/assets/weights/momo-image-base.npz",
+        "momo_lm/api.py",
+        "momo_lm/backend.py",
+        "MomoLM.py",
+        "setup.py",
+        "native/CMakeLists.txt",
+        "native/include/momo_core.h",
+        "native/src/tensor.c",
+        "native/src/runtime.cpp",
+        "native/python/module.cpp",
+        "native/rust/Cargo.toml",
+        "native/rust/Cargo.lock",
+        "native/rust/src/lib.rs",
+        "docs/NATIVE_CORE.md",
         ".github/workflows/ci.yml",
         ".github/workflows/release.yml",
         "installer/windows.iss",
@@ -68,8 +83,13 @@ def main() -> None:
 
     text_model = NeuralTextModel.load(ROOT / "momo_lm/assets/weights/momo-text-base.npz")
     image_model = TinyCanvasModel.load(ROOT / "momo_lm/assets/weights/momo-image-base.npz")
-    if text_model.parameter_count != 107_235:
+    if text_model.parameter_count != 184_131:
         fail(f"unexpected text model parameter count: {text_model.parameter_count}")
+    if text_model.inspect()["format_version"] != 2:
+        fail("text checkpoint migration did not produce model format 2")
+    with np.load(ROOT / "momo_lm/assets/weights/momo-text-base.npz", allow_pickle=False) as archive:
+        if json.loads(str(archive["metadata"])).get("format_version") != 2:
+            fail("bundled text checkpoint is not stored in model format 2")
     if image_model.inspect()["parameters"] < 1_000:
         fail("image checkpoint is incomplete")
     with tempfile.TemporaryDirectory() as directory:

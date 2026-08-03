@@ -9,7 +9,9 @@
 
 <p align="center">
   <a href="#快速開始">快速開始</a> ·
+  <a href="#在其他專案中直接匯入">Python API</a> ·
   <a href="#完整訓練指南">訓練指南</a> ·
+  <a href="docs/NATIVE_CORE.md">原生核心</a> ·
   <a href="docs/MODS.md">Mod 開發</a> ·
   <a href="docs/ARCHITECTURE.md">架構</a> ·
   <a href="https://github.com/YanagiKH/Momo-LM/releases">Releases</a>
@@ -22,7 +24,7 @@
 
 Momo-LM 把「模型、訓練、知識庫、對話、圖像、語音與擴充模組」放在同一個易用的本機工作台。安裝後即可使用隨附的基礎權重對話；再把教材、文件、問答或網站內容餵給它，逐步建立個人助理、公司內部知識模型或特定領域專家。
 
-它刻意保持模型結構透明：文字核心是以 NumPy 實作的 107,235 參數 UTF-8 位元組神經語言模型，訓練的前向傳播、softmax、反向傳播、梯度裁剪與 SGD 都能直接從原始碼閱讀。權重使用不執行任意程式碼的壓縮 `.npz` 格式保存。
+它刻意保持模型結構透明：文字核心是 184,131 參數的 UTF-8 位元組神經語言模型，使用 gated mixed-activation 神經元組、殘差上下文路徑、softmax、完整反向傳播、梯度裁剪與 mini-batch SGD。矩陣密集工作可由 Rust 或 C/C++ 原生核心執行，沒有可用編譯器時則安全退回 NumPy。權重使用不執行任意程式碼的壓縮 `.npz` 格式保存。
 
 <p align="center"><img src="docs/assets/chat-workbench.svg" alt="Momo-LM 對話工作台" width="100%"></p>
 
@@ -31,6 +33,7 @@ Momo-LM 把「模型、訓練、知識庫、對話、圖像、語音與擴充模
 | 功能 | 實作方式 | 是否需要網路 |
 |---|---|---:|
 | 基本對話與反問 | 本機神經文字模型 + 本機檢索記憶 + 釐清問題策略 | 否 |
+| 原生矩陣與推理 | Rust safe kernels、C 分塊張量核心、C++ 融合神經元組 | 否 |
 | 自主增量學習 | 每次允許的對話可更新權重並保存新檢查點 | 否 |
 | 餵入文字與領域資料 | 切塊寫入 SQLite，選擇是否同步訓練 | 否 |
 | 網頁學習 | 由使用者提供起始網址，遵守 `robots.txt`、同網域、頁數與大小限制 | 僅此功能 |
@@ -40,6 +43,7 @@ Momo-LM 把「模型、訓練、知識庫、對話、圖像、語音與擴充模
 | 權重觀察 | 顯示層形狀、參數量、均值、標準差、範圍、稀疏率與訓練統計 | 否 |
 | Mods 擴充 | 將可信任的 Python 檔放入 `~/.momo-lm/mods/` 後重新載入 | 否 |
 | CLI 自動化 | `chat`、`train`、`ingest`、`crawl`、`image`、`tts`、`inspect` | 視命令而定 |
+| Python 嵌入 | `import momo_lm` 或相容入口 `import MomoLM` | 否 |
 
 <p align="center"><img src="docs/assets/training-workbench.svg" alt="Momo-LM 訓練與權重觀察" width="100%"></p>
 
@@ -94,6 +98,37 @@ momo serve
 # Linux / macOS
 ./scripts/install.sh
 ```
+
+## 在其他專案中直接匯入
+
+套件發行名稱可使用連字號 `Momo-LM`，但 Python 的 `import` 文法不允許模組名稱包含 `-`。因此正式匯入名稱是 `momo_lm`，另提供大小寫相容入口 `MomoLM`：
+
+```python
+import momo_lm
+
+with momo_lm.load_model(home="./momo-data") as model:
+    reply = model.chat("你好，請介紹 Momo-LM", learn=False)
+    print(reply)
+
+    model.ingest("產品代號 Peach 是本機推理引擎。", source="product-manual")
+    model.train("User: 產品代號 Peach 是什麼？\nMomo: 它是本機推理引擎。", epochs=3)
+    model.generate_image("pink neural city", "momo.png", width=512, height=512, seed=42)
+```
+
+偏好類別式名稱時可使用完全相同的 API：
+
+```python
+import MomoLM
+
+model = MomoLM.MomoLM.from_pretrained("./momo-data")
+try:
+    print(model("Momo 現在使用哪個運算核心？", learn=False))
+    print(model.inspect()["compute_backend"])
+finally:
+    model.close()
+```
+
+公開介面包含 `chat`、`chat_result`、`train`、`ingest`、`generate_image`、`speak`、`inspect` 與 context manager。模型不會呼叫雲端 API，也不需要 API Key。
 
 ## 使用聊天工作台
 
@@ -228,7 +263,8 @@ flowchart TD
     A["文字或網站資料"] --> B["清理與重疊切塊"]
     B --> C["SQLite 本機知識庫"]
     B --> D["UTF-8 Byte Tokenizer"]
-    D --> E["NumPy 神經文字模型"]
+    D --> E["Gated 神經元組"]
+    E --> J["Rust / C++ / NumPy 後端"]
     C --> F["檢索與來源"]
     E --> G["下一 Token 生成"]
     F --> H["Momo Runtime"]
@@ -240,8 +276,10 @@ flowchart TD
 |---|---|
 | Tokenizer | 259 token：PAD、BOS、EOS、256 個 UTF-8 bytes |
 | 上下文 | 24 tokens，保留位置順序的 embedding 串接 |
-| 文字模型 | 32 維 embedding、96 維 tanh hidden、softmax output |
-| 文字參數 | 107,235，可在權重頁直接驗證 |
+| 文字模型 | 32 維 embedding、96 維 gated mixed-activation neuron groups、殘差路徑、softmax output |
+| 文字參數 | 184,131，可在權重頁直接驗證 |
+| 原生核心 | Rust memory-safe kernels、C blocked matmul/softmax/layer norm、C++ fused inference |
+| 後端順序 | `rust` → `cpp` → `numpy`，可用 `MOMO_BACKEND` 固定 |
 | 圖像模型 | 64 維提示特徵、24 維 latent、64 維 coordinate hidden |
 | 權重格式 | `numpy.savez_compressed`；讀取時 `allow_pickle=False` |
 | 記憶 | SQLite 文件片段與最近 1,000 輪對話 |
@@ -259,6 +297,8 @@ momo crawl URL [--max-pages N] [--train]
 momo image PROMPT [--output FILE] [--width N] [--height N] [--seed N]
 momo tts TEXT [--output FILE] [--rate N]
 momo inspect
+momo backend
+momo benchmark [--size N] [--rounds N]
 momo init [--force]
 ```
 
@@ -274,6 +314,8 @@ momo --home ./experiments/legal-expert serve
 
 ```text
 momo_lm/
+├── api.py            # 可嵌入其他專案的穩定 MomoLM API
+├── backend.py        # Rust / C++ / NumPy 後端選擇與張量介面
 ├── model.py          # 從零實作的文字神經模型與反向傳播
 ├── image_model.py    # TinyCanvas 本機圖像網路
 ├── runtime.py        # 對話、檢索、學習與工具協調
@@ -284,24 +326,29 @@ momo_lm/
 ├── speech.py         # 離線 TTS 後端
 ├── web/              # 響應式聊天與訓練介面
 └── assets/weights/   # 可直接使用和繼續訓練的基礎權重
+native/
+├── include/          # 穩定 C ABI
+├── src/              # C 張量核心與 C++ 推理框架
+├── python/           # CPython 原生擴充
+└── rust/             # 無外部 crate 的 memory-safe kernels
 ```
 
 ## 開發與驗證
 
 ```bash
 python -m pip install -e ".[dev]"
-python scripts/bootstrap_weights.py --force
+python scripts/build_native.py --release
 python -m compileall -q momo_lm scripts tests
 ruff check .
 python -m unittest discover -s tests -v
 python -m build
 ```
 
-GitHub Actions 會在 Windows 與 Linux 上執行語法編譯、靜態檢查、所有單元與 HTTP 整合測試、wheel/sdist 建置及安裝後 smoke test。建立 `v*` 標籤時，Release workflow 會額外產生兩套可直接安裝的資產。
+GitHub Actions 會在 Windows 與 Linux 上分別編譯 C、C++、Rust 與 CPython 擴充，執行 Rust Clippy、CMake/CTest、原生數值一致性、Python/HTTP 整合測試、wheel/sdist 與安裝後 smoke test。CI 和 Release 設定 `MOMO_REQUIRE_NATIVE=1`，任何原生後端缺失都會直接失敗；建立 `v*` 標籤時才會產生兩套可直接安裝的資產。
 
 ## 目前限制與路線圖
 
-- 目前基礎文字模型很小，適合教育、原型與有限領域，不適合直接取代大型語言模型。
+- 目前基礎文字模型仍小，gated 神經元組與原生核心提升了表達能力、可擴充性與效率，但不等同大型商用 Transformer 的知識量。
 - TinyCanvas 產生抽象圖像，不是寫實擴散模型。
 - 增量 SGD 適合小批資料；大型資料集預計加入 mini-batch dataset streaming、AdamW 與驗證儀表板。
 - 規劃中的相容 Mod：本機 GGUF 推論、本機 diffusion checkpoint、更多離線 TTS 引擎與版本化評估套件。

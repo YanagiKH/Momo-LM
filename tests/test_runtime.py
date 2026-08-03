@@ -33,7 +33,8 @@ class RuntimeTests(unittest.TestCase):
 
     def test_weight_inspection(self) -> None:
         status = self.runtime.status()
-        self.assertGreater(status["weights"]["parameters"], 50_000)
+        self.assertEqual(status["weights"]["parameters"], 184_131)
+        self.assertIn(status["compute_backend"]["name"], {"numpy", "cpp", "rust"})
         self.assertGreater(status["image_weights"]["parameters"], 1_000)
         self.assertGreaterEqual(status["knowledge"]["documents"], 20)
 

@@ -9,6 +9,9 @@ on:
 permissions:
   contents: read
 
+env:
+  MOMO_REQUIRE_NATIVE: "1"
+
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -30,6 +33,10 @@ jobs:
           cache: pip
       - name: Install project and validation tools
         run: python -m pip install --upgrade pip && python -m pip install -e ".[dev]"
+      - name: Verify native backend
+        run: momo backend
+      - name: Test Rust safe kernels
+        run: cargo test --manifest-path native/rust/Cargo.toml --locked
       - name: Compile all Python sources
         run: python -m compileall -q momo_lm scripts tests
       - name: Static analysis
@@ -44,7 +51,32 @@ jobs:
         run: python -m pip install --force-reinstall dist/*.whl
         if: runner.os == 'Linux'
       - name: Installed CLI smoke test
-        run: momo --home .ci-home init && momo --home .ci-home inspect
+        run: momo --home .ci-home init && momo --home .ci-home inspect && momo benchmark --size 64 --rounds 1
+
+  native-core:
+    name: C/C++/Rust core · ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show native toolchains
+        run: |
+          cmake --version
+          cargo --version
+          rustc --version
+      - name: Configure C/C++ core
+        run: cmake -S native -B build/native -DCMAKE_BUILD_TYPE=Release
+      - name: Build C/C++ core
+        run: cmake --build build/native --config Release
+      - name: Test C/C++ core
+        run: ctest --test-dir build/native -C Release --output-on-failure
+      - name: Test and lint Rust core
+        run: |
+          cargo test --manifest-path native/rust/Cargo.toml --release --locked
+          cargo clippy --manifest-path native/rust/Cargo.toml --all-targets --locked -- -D warnings
 
   package-smoke:
     name: Executable smoke · ${{ matrix.os }}
@@ -61,6 +93,10 @@ jobs:
           cache: pip
       - run: python -m pip install --upgrade pip pyinstaller && python -m pip install .
       - run: pyinstaller --clean --noconfirm packaging/momo_lm.spec
+      - run: ./dist/Momo-LM/Momo-LM backend
+        if: runner.os == 'Linux'
+      - run: .\dist\Momo-LM\Momo-LM.exe backend
+        if: runner.os == 'Windows'
       - name: Linux executable smoke test
         if: runner.os == 'Linux'
         run: ./dist/Momo-LM/Momo-LM --home .package-home init && ./dist/Momo-LM/Momo-LM --home .package-home inspect
