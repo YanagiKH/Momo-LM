@@ -14,7 +14,6 @@ keywords = ["ai", "language-model", "local-ai", "machine-learning", "open-source
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3",
   "Programming Language :: C",
   "Programming Language :: C++",
   "Programming Language :: Rust",
