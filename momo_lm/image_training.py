@@ -393,15 +393,16 @@ def create_reference_manifest(directory: Path, *, size: int = 64) -> Path:
             }
         )
     manifest_path = directory / "manifest.json"
-    manifest_path.write_text(
-        json.dumps(
-            {"format_version": 1, "examples": records},
-            ensure_ascii=False,
-            sort_keys=True,
-            indent=2,
-        )
-        + "\n",
-        encoding="utf-8",
+    manifest_path.write_bytes(
+        (
+            json.dumps(
+                {"format_version": 1, "examples": records},
+                ensure_ascii=False,
+                sort_keys=True,
+                indent=2,
+            )
+            + "\n"
+        ).encode("utf-8")
     )
     return manifest_path
 
