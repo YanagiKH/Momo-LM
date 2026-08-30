@@ -25,7 +25,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["build>=1.2,<2", "pyinstaller>=6.10,<7", "ruff>=0.9,<1"]
+dev = [
+  "build>=1.2,<2",
+  "pyinstaller>=6.10,<7",
+  "ruff>=0.9,<1",
+  "tomli>=2,<3; python_version < '3.11'",
+]
 
 [project.scripts]
 momo = "momo_lm.cli:main"

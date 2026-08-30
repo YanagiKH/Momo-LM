@@ -371,7 +371,7 @@ pub unsafe extern "C" fn momo_rust_rope_f32(
         || key_output.is_null()
         || rotary_dimensions == 0
         || rotary_dimensions > head_size
-        || rotary_dimensions % 2 != 0
+        || !rotary_dimensions.is_multiple_of(2)
         || !theta.is_finite()
         || theta <= 0.0
     {
@@ -387,9 +387,9 @@ pub unsafe extern "C" fn momo_rust_rope_f32(
     }
     query_output.copy_from_slice(query);
     key_output.copy_from_slice(key);
-    for token in 0..tokens {
+    for (token, position) in positions.iter().copied().enumerate() {
         for dimension in (0..rotary_dimensions).step_by(2) {
-            let angle = rope_angle(positions[token], dimension, rotary_dimensions, theta);
+            let angle = rope_angle(position, dimension, rotary_dimensions, theta);
             let (sine, cosine) = angle.sin_cos();
             for head in 0..query_heads {
                 let offset = (token * query_heads + head) * head_size + dimension;
@@ -531,7 +531,7 @@ pub unsafe extern "C" fn momo_rust_causal_gqa_f32(
         || key.is_null()
         || value.is_null()
         || output.is_null()
-        || query_heads % key_value_heads != 0
+        || !query_heads.is_multiple_of(key_value_heads)
         || !scale.is_finite()
         || scale <= 0.0
     {
@@ -587,7 +587,7 @@ pub unsafe extern "C" fn momo_rust_decode_attention_f32(
         || key_cache.is_null()
         || value_cache.is_null()
         || output.is_null()
-        || query_heads % key_value_heads != 0
+        || !query_heads.is_multiple_of(key_value_heads)
         || !scale.is_finite()
         || scale <= 0.0
     {
@@ -634,7 +634,7 @@ pub unsafe extern "C" fn momo_rust_quantize_q8_f32(
     if !finite_values(input) {
         return NUMERIC_ERROR;
     }
-    for row in 0..rows {
+    for (row, scale_slot) in scales.iter_mut().enumerate() {
         let offset = row * columns;
         let mut maximum = 0.0_f32;
         for column in 0..columns {
@@ -645,7 +645,7 @@ pub unsafe extern "C" fn momo_rust_quantize_q8_f32(
         } else {
             (maximum / 127.0).max(f32::MIN_POSITIVE)
         };
-        scales[row] = scale;
+        *scale_slot = scale;
         for column in 0..columns {
             output[offset + column] = (input[offset + column] / scale)
                 .round()
@@ -678,8 +678,7 @@ pub unsafe extern "C" fn momo_rust_dequantize_q8_f32(
     let input = slice::from_raw_parts(input, count);
     let scales = slice::from_raw_parts(scales, rows);
     let output = slice::from_raw_parts_mut(output, count);
-    for row in 0..rows {
-        let scale = scales[row];
+    for (row, scale) in scales.iter().copied().enumerate() {
         if !scale.is_finite() || scale < f32::MIN_POSITIVE {
             return NUMERIC_ERROR;
         }
