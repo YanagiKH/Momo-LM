@@ -52,14 +52,72 @@ class MomoLM:
         width: int = 512,
         height: int = 512,
         seed: int | None = None,
+        style: str = "illustration",
+        negative_prompt: str = "",
+        quality: str = "standard",
+        steps: int | None = None,
+        tile_size: int = 128,
     ) -> Path:
-        return self.runtime.generate_image(prompt, Path(output), width=width, height=height, seed=seed)
+        return self.runtime.generate_image(
+            prompt,
+            Path(output),
+            width=width,
+            height=height,
+            seed=seed,
+            style=style,
+            negative_prompt=negative_prompt,
+            quality=quality,
+            steps=steps,
+            tile_size=tile_size,
+        )
 
     def speak(self, text: str, output: str | Path, *, rate: int = 170) -> dict[str, Any]:
         return self.runtime.speech.synthesize(text, Path(output), rate=rate)
 
     def inspect(self) -> dict[str, Any]:
         return self.runtime.status()
+
+    def create_agent(
+        self,
+        goal: str,
+        *,
+        profile: str = "copilot",
+        capabilities: list[str] | None = None,
+        budgets: dict[str, Any] | None = None,
+        background: bool = False,
+    ) -> dict[str, Any]:
+        """Create and run a capability-limited local agent.
+
+        Mutating steps stop in ``waiting_approval`` until ``approve_agent`` consumes
+        the exact pending approval once.
+        """
+
+        return self.runtime.create_agent(
+            goal,
+            profile=profile,
+            capabilities=capabilities,
+            budgets=budgets,
+            background=background,
+        )
+
+    def list_agents(self, *, limit: int = 100) -> list[dict[str, Any]]:
+        return self.runtime.list_agents(limit=limit)
+
+    def get_agent(self, agent_id: str) -> dict[str, Any]:
+        return self.runtime.get_agent(agent_id)
+
+    def approve_agent(
+        self, agent_id: str, approval_id: str, *, background: bool = False
+    ) -> dict[str, Any]:
+        return self.runtime.approve_agent(agent_id, approval_id, background=background)
+
+    def cancel_agent(self, agent_id: str) -> dict[str, Any]:
+        return self.runtime.cancel_agent(agent_id)
+
+    def agent_events(
+        self, agent_id: str, *, after: int = 0, limit: int = 100
+    ) -> list[dict[str, Any]]:
+        return self.runtime.agent_events(agent_id, after=after, limit=limit)
 
     def close(self) -> None:
         if not self._closed:

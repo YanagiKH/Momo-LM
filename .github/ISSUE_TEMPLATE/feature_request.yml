@@ -1,0 +1,35 @@
+name: Feature request
+description: Propose a bounded, testable change.
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Describe the user problem and current workaround.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: State the inputs, outputs, failure behavior, and compatibility requirements.
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: Acceptance tests
+      description: List the checks that would demonstrate the change works.
+    validations:
+      required: true
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: Project constraints
+      options:
+        - label: The proposal can work locally without a hosted AI API key.
+          required: true
+        - label: Any new model, dataset, crate, or library can be redistributed under a documented license.
+          required: true

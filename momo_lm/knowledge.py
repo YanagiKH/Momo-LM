@@ -73,6 +73,16 @@ class KnowledgeStore:
             ).fetchall()
         return [dict(row) for row in reversed(rows)]
 
+    def recent_documents(self, limit: int = 4) -> list[str]:
+        bounded = max(0, min(int(limit), 64))
+        if not bounded:
+            return []
+        with self._lock:
+            rows = self._connection.execute(
+                "SELECT content FROM documents ORDER BY id DESC LIMIT ?", (bounded,)
+            ).fetchall()
+        return [str(row["content"]) for row in rows]
+
     def search(self, query: str, limit: int = 4) -> list[KnowledgeHit]:
         terms: set[str] = set()
         for word in WORD_PATTERN.findall(query.lower()):

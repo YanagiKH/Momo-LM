@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "project_version": "0.3.0",
+  "reproduction_environment": {
+    "operating_system": "Linux 6.18.35 x86_64, glibc 2.39",
+    "python": "CPython 3.12.13",
+    "numpy": "2.3.5",
+    "pillow": "12.3.0",
+    "backend": "numpy",
+    "determinism_note": "Whole-file hashes require byte-identical code, inputs, package versions and checkpoint serialization. Floating-point metrics may vary slightly on another platform."
+  },
+  "text": {
+    "checkpoint": "momo_lm/assets/weights/momo-text-base.npz",
+    "checkpoint_sha256": "bc668816d5485c70fe5e99895301edc9accb4e49efcd75f0f4140c3d50f7cf45",
+    "format_version": 3,
+    "parameters": 223835,
+    "tensors": 21,
+    "shape": {
+      "vocab_size": 259,
+      "context_length": 128,
+      "embedding_size": 64,
+      "hidden_size": 256,
+      "attention_heads": 4,
+      "neuron_groups": 8,
+      "seed": 20260803
+    },
+    "dataset": {
+      "path": "momo_lm/assets/corpus/starter.txt",
+      "sha256": "29e4032ae6461bceb5ce1c1224e55ab762d3f928300a802e5ddc8884b5f63da8",
+      "utf8_bytes": 5007,
+      "targets_per_epoch": 5009,
+      "validation_overlap": "The fixed validation sequence comes from the starter corpus used for training. It is not held out."
+    },
+    "training": {
+      "reproduction_command": "MOMO_BACKEND=numpy python scripts/bootstrap_weights.py --force --skip-image",
+      "optimizer": "AdamW",
+      "epochs": 24,
+      "batch_size": 144,
+      "learning_rate": 0.0002,
+      "beta1": 0.9,
+      "beta2": 0.999,
+      "epsilon": 1e-08,
+      "weight_decay": 0.01,
+      "gradient_clip": 1.0,
+      "optimizer_steps": 840,
+      "targets_seen": 120216,
+      "seed": 20260803
+    },
+    "metrics": {
+      "definitions": {
+        "negative_log_likelihood": "Mean negative log probability of the fixed byte, BOS and EOS targets.",
+        "perplexity": "exp(mean negative log-likelihood).",
+        "top1_accuracy": "Fraction of fixed targets equal to argmax next-token prediction."
+      },
+      "baseline": {
+        "negative_log_likelihood": 6.620585253672296,
+        "perplexity": 750.384133695342,
+        "top1_accuracy": 0.000798562587342783
+      },
+      "trained": {
+        "negative_log_likelihood": 1.4396987674383375,
+        "perplexity": 4.219424597459572,
+        "top1_accuracy": 0.5729686564184467
+      }
+    },
+    "interpretation": "These overlapping-corpus next-token metrics verify training regression. They do not establish everyday conversation, factuality, instruction following, reasoning, safety or market parity."
+  },
+  "image": {
+    "checkpoint": "momo_lm/assets/weights/momo-image-base.npz",
+    "checkpoint_sha256": "92ccb5f37a946bcc478f8cccca3d2b7edb513d51233061c05a40b7d298b16b7c",
+    "format_version": 2,
+    "parameters": 3963,
+    "shape": {
+      "prompt_features": 64,
+      "latent_size": 24,
+      "hidden_size": 64,
+      "styles": [
+        "anime",
+        "manga",
+        "illustration",
+        "realistic"
+      ]
+    },
+    "dataset": {
+      "generator": "momo_lm.image_training.create_reference_manifest",
+      "unique_images": 4,
+      "image_size": 64,
+      "license": "CC0-1.0",
+      "manifest_sha256": "f486d944d01277acdb30b7de7cc428bf98be890e376de996a163ca2d60e90229",
+      "validation_overlap": "The same four procedural reference images are used for training and fixed-coordinate evaluation. There is no held-out image."
+    },
+    "training": {
+      "trainer": "momo_lm.image_training.train_manifest",
+      "epochs": 24,
+      "learning_rate": 0.5,
+      "samples_per_image": 512,
+      "gradient_clip": 1.0,
+      "optimizer_steps": 96,
+      "examples_processed": 96,
+      "seed": 20260830
+    },
+    "metrics": {
+      "definition": "Mean squared RGB reconstruction error on deterministic fixed coordinates, averaged over the four known examples.",
+      "baseline_mean_loss": 0.14023715443909168,
+      "trained_mean_loss": 0.0728892800398171,
+      "per_style": {
+        "anime": {
+          "baseline_loss": 0.0874478221,
+          "trained_loss": 0.0338756777
+        },
+        "manga": {
+          "baseline_loss": 0.2420788258,
+          "trained_loss": 0.1992309839
+        },
+        "illustration": {
+          "baseline_loss": 0.128119275,
+          "trained_loss": 0.0307133999
+        },
+        "realistic": {
+          "baseline_loss": 0.1033026949,
+          "trained_loss": 0.0277370587
+        }
+      }
+    },
+    "interpretation": "The overlapping four-image reconstruction loss verifies backprop and style conditioning. It is not FID, prompt-alignment, human-preference, anime quality, illustration quality or photographic-realism evidence."
+  }
+}

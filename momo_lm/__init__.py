@@ -4,6 +4,6 @@ from .api import MomoLM, load_model
 from .backend import get_backend
 from .config import MomoConfig
 from .runtime import MomoRuntime
+from .version import __version__
 
-__all__ = ["MomoConfig", "MomoLM", "MomoRuntime", "get_backend", "load_model"]
-__version__ = "0.2.0"
+__all__ = ["MomoConfig", "MomoLM", "MomoRuntime", "__version__", "get_backend", "load_model"]

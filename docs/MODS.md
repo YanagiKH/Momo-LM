@@ -1,6 +1,6 @@
 # Momo-LM Mod 開發
 
-Mod 是放在執行目錄 `mods/` 的 Python 檔。預設位置是 `~/.momo-lm/mods/`；每個實驗也可用 `momo --home PATH` 擁有自己的 Mods。
+Mod 是放在執行目錄 `mods/` 的 Python 檔。預設位置是 `~/.momo-lm/mods/`；每個實驗也可用 `momo --home PATH` 擁有自己的 Mods。Mod 是可信任程式碼擴充，不是受限代理工具，也不是 sandbox。
 
 ## 最小模組
 
@@ -53,7 +53,11 @@ def register() -> ModSpec:
 
 ## 安全
 
-Mod 不是 sandbox。它能讀寫使用者可存取的檔案、連網與啟動程式。只載入自己撰寫或完整審查過的檔案，不要從不明來源複製 Mod。
+Mod 能讀寫使用者可存取的檔案、連網、啟動程式、讀取環境變數，並呼叫任何已安裝的 Python 套件。代理的 capability、approval、workspace 與禁止工具規則不會限制 Mod。
+
+只載入自己撰寫或逐行審查過的檔案。不要從 issue、聊天訊息或未知網站直接複製 Mod。需要第三方套件時，記錄版本、hash、授權與其原生程式碼；不要在 Mod 中保存 token。
+
+載入錯誤會被隔離並顯示在 Mods 頁，但執行中 handler 的副作用無法由 Momo-LM 回復。涉及寫檔或網路的 handler 應自行加入明確確認、timeout、大小限制與 audit log。
 
 ## 測試
 
@@ -69,3 +73,5 @@ with tempfile.TemporaryDirectory() as directory:
     assert not manager.errors
     assert manager.command("/hello Momo") == "Hello, Momo"
 ```
+
+測試應另外涵蓋空輸入、超長輸入、handler exception、重複命令、非 UTF-8 檔案與重新載入。CI 不會自動信任或簽署第三方 Mod。

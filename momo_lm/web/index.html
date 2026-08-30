@@ -4,58 +4,189 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0d0c1d">
+  <meta name="referrer" content="no-referrer">
   <title>Momo-LM — Local AI Workbench</title>
   <link rel="stylesheet" href="/app.css">
 </head>
 <body>
-  <div class="noise"></div>
+  <div class="noise" aria-hidden="true"></div>
   <aside class="sidebar">
-    <div class="brand"><span class="mark">M</span><div><strong>Momo-LM</strong><small>LOCAL AI WORKBENCH</small></div></div>
-    <nav id="nav">
-      <button class="active" data-panel="chat"><span>◌</span> 對話</button>
-      <button data-panel="learn"><span>↗</span> 學習資料</button>
-      <button data-panel="image"><span>◇</span> 圖像生成</button>
-      <button data-panel="speech"><span>♫</span> 文字轉語音</button>
-      <button data-panel="weights"><span>▦</span> 權重觀察</button>
-      <button data-panel="mods"><span>⬡</span> Mods</button>
+    <div class="brand">
+      <span class="mark" aria-hidden="true">M</span>
+      <div><strong>Momo-LM</strong><small>LOCAL AI WORKBENCH</small></div>
+    </div>
+    <nav id="nav" aria-label="工作區">
+      <button class="active" data-panel="chat"><span aria-hidden="true">◌</span> 對話</button>
+      <button data-panel="agents"><span aria-hidden="true">⌁</span> 代理工作</button>
+      <button data-panel="learn"><span aria-hidden="true">↗</span> 學習資料</button>
+      <button data-panel="image"><span aria-hidden="true">◇</span> 圖像生成</button>
+      <button data-panel="speech"><span aria-hidden="true">♫</span> 文字轉語音</button>
+      <button data-panel="weights"><span aria-hidden="true">▦</span> 權重觀察</button>
+      <button data-panel="mods"><span aria-hidden="true">⬡</span> Mods</button>
     </nav>
-    <div class="status-card"><i id="statusDot"></i><div><b id="statusText">正在連接</b><small id="modelMeta">讀取本機模型…</small></div></div>
-    <button class="theme" id="theme">◐　切換外觀</button>
+    <div class="status-card" aria-live="polite">
+      <i id="statusDot" aria-hidden="true"></i>
+      <div><b id="statusText">正在連接</b><small id="modelMeta">讀取本機模型…</small></div>
+    </div>
+    <button class="theme" id="theme" type="button">◐　切換外觀</button>
   </aside>
 
   <main>
-    <header><div><p class="eyebrow">NO API KEY · LOCAL FIRST</p><h1 id="pageTitle">與 Momo 對話</h1></div><div class="pill">自我學習 <label class="switch"><input id="learnToggle" type="checkbox" checked><span></span></label></div></header>
+    <header>
+      <div><p class="eyebrow">NO API KEY · LOCAL FIRST</p><h1 id="pageTitle">與 Momo 對話</h1></div>
+      <div class="pill">自我學習 <label class="switch"><input id="learnToggle" type="checkbox" checked><span></span></label></div>
+    </header>
+
+    <section id="authBanner" class="auth-banner" hidden aria-labelledby="authTitle">
+      <div><strong id="authTitle">需要工作台存取權杖</strong><p>權杖只保留在這個瀏覽器分頁，關閉分頁後即清除。</p></div>
+      <form id="tokenForm">
+        <label class="sr-only" for="tokenInput">存取權杖</label>
+        <input id="tokenInput" type="password" minlength="1" maxlength="1024" autocomplete="off" spellcheck="false" placeholder="貼上啟動訊息中的權杖">
+        <button class="primary" type="submit">連線</button>
+      </form>
+    </section>
 
     <section id="chat" class="panel active">
-      <div id="messages" class="messages">
-        <article class="message momo"><div class="avatar">M</div><div><b>Momo</b><p>你好，我已在本機準備完成。你可以和我對話、餵入資料、訓練權重，或載入自己的模組。</p></div></article>
+      <div id="messages" class="messages" aria-live="polite">
+        <article class="message momo"><div class="avatar" aria-hidden="true">M</div><div><b>Momo</b><p>你好，我已在本機準備完成。你可以和我對話、餵入資料、訓練權重，或載入自己的模組。</p></div></article>
       </div>
-      <form id="chatForm" class="composer"><textarea id="chatInput" rows="1" maxlength="12000" placeholder="輸入訊息…（Enter 送出，Shift+Enter 換行）"></textarea><button type="submit" aria-label="send">↑</button></form>
+      <form id="chatForm" class="composer">
+        <label class="sr-only" for="chatInput">訊息</label>
+        <textarea id="chatInput" rows="1" maxlength="12000" placeholder="輸入訊息…（Enter 送出，Shift+Enter 換行）"></textarea>
+        <button type="submit" aria-label="送出訊息">↑</button>
+      </form>
+    </section>
+
+    <section id="agents" class="panel">
+      <div class="agent-layout">
+        <article class="card agent-create">
+          <span class="card-icon" aria-hidden="true">⌁</span>
+          <h2>建立代理工作</h2>
+          <p>代理在本機執行。預設使用各職務的受限能力；寫入或執行類工具會先要求單次核准。</p>
+          <label for="agentProfile">職務</label>
+          <select id="agentProfile">
+            <option value="copilot">協作駕駛員</option>
+            <option value="training">模型訓練</option>
+            <option value="coding">程式開發</option>
+            <option value="workplace">職場工作</option>
+          </select>
+          <label for="agentGoal">工作目標</label>
+          <textarea id="agentGoal" rows="7" maxlength="12000" placeholder="清楚說明要完成的工作、限制與驗收方式…"></textarea>
+          <p id="agentProfileHint" class="field-note">協作駕駛員會檢查本機模型、搜尋知識，再整理一份工作摘要。</p>
+          <fieldset class="capability-picker">
+            <legend>額外能力（明確授權）</legend>
+            <label data-agent-profiles="training"><input type="checkbox" name="agentCapability" value="model.train"> 本機模型訓練<small>實際修改權重前仍會要求單次核准。</small></label>
+            <label data-agent-profiles="coding"><input type="checkbox" name="agentCapability" value="workspace.write"> 代理工作區寫入<small>只能寫入隔離工作區，且每次寫入都需核准。</small></label>
+          </fieldset>
+          <details class="budget-settings">
+            <summary>執行預算</summary>
+            <div class="budget-grid">
+              <label for="agentMaxSteps">最多步驟<input id="agentMaxSteps" type="number" min="1" max="128" placeholder="預設 8"></label>
+              <label for="agentMaxTools">工具呼叫<input id="agentMaxTools" type="number" min="0" max="128" placeholder="預設 8"></label>
+              <label for="agentMaxInput">輸入字元<input id="agentMaxInput" type="number" min="256" max="1000000" placeholder="預設 12000"></label>
+            </div>
+          </details>
+          <button id="agentCreateBtn" class="primary wide" type="button">開始工作</button>
+        </article>
+
+        <div class="agent-workspace">
+          <article class="card">
+            <div class="card-head">
+              <div><h2>工作佇列</h2><p>執行中與近期的本機代理工作。</p></div>
+              <button id="refreshAgents" type="button">重新整理</button>
+            </div>
+            <div id="agentList" class="agent-list" aria-live="polite"><p class="empty-state">正在讀取工作…</p></div>
+          </article>
+
+          <article id="agentDetailCard" class="card agent-detail" hidden>
+            <div class="agent-detail-head">
+              <div><small id="agentDetailProfile"></small><h2 id="agentDetailGoal"></h2></div>
+              <div class="detail-actions"><span id="agentDetailStatus" class="status-chip"></span><button id="cancelAgent" class="danger" type="button">取消工作</button></div>
+            </div>
+            <div id="agentUsage" class="usage-row"></div>
+            <section id="approvalBox" class="approval-box" hidden aria-labelledby="approvalTitle">
+              <div class="approval-heading"><div><small>等待你的決定</small><h3 id="approvalTitle">工具需要單次核准</h3></div><span id="approvalExpiry"></span></div>
+              <dl>
+                <div><dt>工具</dt><dd id="approvalTool"></dd></div>
+                <div><dt>理由</dt><dd id="approvalReason"></dd></div>
+              </dl>
+              <details><summary>查看精確參數</summary><pre id="approvalArguments"></pre></details>
+              <p class="approval-note">核准只適用於上方這一次呼叫；參數變更後必須再次詢問。</p>
+              <button id="approveAgent" class="primary" type="button">核准這一次呼叫</button>
+            </section>
+            <section class="event-section" aria-labelledby="eventTitle">
+              <div class="card-head"><h3 id="eventTitle">執行事件</h3><small id="eventConnection">等待事件…</small></div>
+              <ol id="agentEvents" class="event-list"></ol>
+            </section>
+            <section id="agentOutcome" class="agent-outcome" hidden>
+              <h3 id="outcomeTitle">結果</h3><pre id="outcomeText"></pre>
+            </section>
+          </article>
+        </div>
+      </div>
     </section>
 
     <section id="learn" class="panel">
       <div class="grid two">
-        <article class="card"><span class="card-icon">Aa</span><h2>餵入文字</h2><p>內容會切塊存入本機知識庫，可同時更新語言模型權重。</p><input id="source" placeholder="資料來源名稱" value="web-ui"><textarea id="learnText" rows="12" placeholder="貼上文章、筆記、問答或垂直領域資料…"></textarea><div class="row"><label><input id="trainNow" type="checkbox" checked> 同時訓練</label><select id="epochs"><option>1</option><option selected>3</option><option>5</option><option>10</option></select><button id="ingestBtn" class="primary">開始學習</button></div></article>
-        <article class="card"><span class="card-icon">◎</span><h2>受控網頁學習</h2><p>遵守 robots.txt，只讀取同一網域的 HTML，頁數與逾時皆有限制。</p><input id="crawlUrl" type="url" placeholder="https://example.com/docs"><div class="row"><label>頁數 <input id="crawlPages" type="number" min="1" max="50" value="5"></label><label><input id="crawlTrain" type="checkbox"> 更新權重</label></div><button id="crawlBtn" class="primary wide">讀取網站</button><pre id="learnResult">等待資料…</pre></article>
+        <article class="card">
+          <span class="card-icon" aria-hidden="true">Aa</span><h2>餵入文字</h2><p>內容會切塊存入本機知識庫，可同時更新語言模型權重。</p>
+          <label class="sr-only" for="source">資料來源名稱</label><input id="source" placeholder="資料來源名稱" value="web-ui">
+          <label class="sr-only" for="learnText">學習資料</label><textarea id="learnText" rows="12" placeholder="貼上文章、筆記、問答或垂直領域資料…"></textarea>
+          <div class="row"><label><input id="trainNow" type="checkbox" checked> 同時訓練</label><label class="sr-only" for="epochs">訓練輪數</label><select id="epochs"><option>1</option><option selected>3</option><option>5</option><option>10</option></select><button id="ingestBtn" class="primary" type="button">開始學習</button></div>
+        </article>
+        <article class="card">
+          <span class="card-icon" aria-hidden="true">◎</span><h2>受控網頁學習</h2><p>遵守 robots.txt，只讀取同一網域的 HTML，頁數與逾時皆有限制。</p>
+          <label class="sr-only" for="crawlUrl">網站網址</label><input id="crawlUrl" type="url" placeholder="https://example.com/docs">
+          <div class="row"><label>頁數 <input id="crawlPages" type="number" min="1" max="50" value="5"></label><label><input id="crawlTrain" type="checkbox"> 更新權重</label></div>
+          <button id="crawlBtn" class="primary wide" type="button">讀取網站</button><pre id="learnResult">等待資料…</pre>
+        </article>
       </div>
     </section>
 
     <section id="image" class="panel">
-      <div class="grid studio"><article class="card"><span class="card-icon">◇</span><h2>TinyCanvas 本機生成器</h2><p>用內建提示詞條件座標網路產生抽象概念圖，不連接雲端服務。</p><textarea id="imagePrompt" rows="6" placeholder="例如：夜色中的粉紫色未來城市，柔和光線"></textarea><div class="row"><select id="imageSize"><option value="512">512 × 512</option><option value="768">768 × 768</option><option value="1024">1024 × 1024</option></select><input id="imageSeed" type="number" placeholder="Seed（選填）"></div><button id="imageBtn" class="primary wide">生成圖像</button></article><article class="preview card"><div id="imageEmpty"><span>◇</span><p>生成結果會顯示在這裡</p></div><img id="imageOutput" alt="Momo-LM generated image"><a id="downloadImage" class="download" download>下載 PNG</a></article></div>
+      <div class="grid studio">
+        <article class="card image-controls">
+          <span class="card-icon" aria-hidden="true">◇</span><h2>TinyCanvas 本機生成器</h2><p>使用隨附的小型座標網路離線生成圖像。它適合實驗風格與訓練流程，不等同大型擴散模型。</p>
+          <label for="imagePrompt">畫面描述</label><textarea id="imagePrompt" rows="5" maxlength="12000" placeholder="例如：夜色中的粉紫色未來城市，柔和光線"></textarea>
+          <label for="negativePrompt">排除內容</label><textarea id="negativePrompt" rows="3" maxlength="12000" placeholder="例如：模糊、文字、水印（選填）"></textarea>
+          <div class="image-options">
+            <label for="imageStyle">風格<select id="imageStyle"><option value="anime">動漫</option><option value="manga">漫畫</option><option value="illustration" selected>插畫</option><option value="realistic">寫實</option></select></label>
+            <label for="imageQuality">品質<select id="imageQuality"><option value="draft">草稿</option><option value="standard" selected>標準</option><option value="high">高品質</option></select></label>
+            <label for="imageSize">尺寸<select id="imageSize"><option value="512">512 × 512</option><option value="768">768 × 768</option><option value="1024">1024 × 1024</option><option value="1536">1536 × 1536</option><option value="2048">2048 × 2048</option></select></label>
+            <label for="imageSteps">推理步數<input id="imageSteps" type="number" min="1" max="8" placeholder="依品質"></label>
+            <label for="imageSeed">Seed<input id="imageSeed" type="number" step="1" placeholder="隨機"></label>
+          </div>
+          <p class="field-note">較大的尺寸與較多步數會增加記憶體用量及等待時間。</p>
+          <button id="imageBtn" class="primary wide" type="button">生成圖像</button>
+        </article>
+        <article class="preview card">
+          <div id="imageEmpty"><span aria-hidden="true">◇</span><p>生成結果會顯示在這裡</p></div>
+          <img id="imageOutput" alt="Momo-LM 生成圖像">
+          <div id="imageMeta" class="image-meta" hidden></div>
+          <a id="downloadImage" class="download" download>下載 PNG</a>
+        </article>
+      </div>
     </section>
 
     <section id="speech" class="panel">
-      <article class="card narrow"><span class="card-icon">♫</span><h2>離線文字轉語音</h2><p>優先使用 Windows SAPI 或 Linux eSpeak；沒有系統語音時仍可輸出聲音波形。</p><textarea id="speechText" rows="8" placeholder="輸入要朗讀的內容…"></textarea><label>語速 <input id="speechRate" type="range" min="80" max="300" value="170"><output id="rateOutput">170</output></label><button id="speechBtn" class="primary wide">產生語音</button><audio id="audioOutput" controls></audio><small id="speechEngine"></small></article>
+      <article class="card narrow">
+        <span class="card-icon" aria-hidden="true">♫</span><h2>離線文字轉語音</h2><p>優先使用 Windows SAPI 或 Linux eSpeak；沒有系統語音時仍可輸出聲音波形。</p>
+        <label class="sr-only" for="speechText">朗讀文字</label><textarea id="speechText" rows="8" placeholder="輸入要朗讀的內容…"></textarea>
+        <label>語速 <input id="speechRate" type="range" min="80" max="300" value="170"><output id="rateOutput">170</output></label>
+        <button id="speechBtn" class="primary wide" type="button">產生語音</button><audio id="audioOutput" controls></audio><small id="speechEngine"></small>
+      </article>
     </section>
 
     <section id="weights" class="panel">
-      <div class="stats" id="stats"></div><article class="card"><div class="card-head"><div><h2>文字模型權重</h2><p>每層的參數量、分布與張量形狀。</p></div><button id="refreshWeights">重新整理</button></div><div id="layers" class="layers"></div></article>
+      <div class="stats" id="stats"></div>
+      <article class="card"><div class="card-head"><div><h2>文字模型權重</h2><p>每層的參數量、分布與張量形狀。</p></div><button id="refreshWeights" type="button">重新整理</button></div><div id="layers" class="layers"></div></article>
     </section>
 
     <section id="mods" class="panel">
-      <article class="card"><div class="card-head"><div><span class="card-icon">⬡</span><h2>模組管理</h2><p>把可信任的 Python 模組放入執行目錄的 <code>mods/</code> 後重新載入。</p></div><button id="reloadMods" class="primary">重新載入</button></div><div id="modList" class="mod-list"></div></article>
+      <article class="card"><div class="card-head"><div><span class="card-icon" aria-hidden="true">⬡</span><h2>模組管理</h2><p>把可信任的 Python 模組放入執行目錄的 <code>mods/</code> 後重新載入。</p></div><button id="reloadMods" class="primary" type="button">重新載入</button></div><div id="modList" class="mod-list"></div></article>
     </section>
-    <div id="toast" role="status"></div>
+
+    <div id="toast" role="status" aria-live="polite"></div>
   </main>
   <script src="/app.js"></script>
 </body>

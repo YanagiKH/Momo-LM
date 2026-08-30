@@ -63,18 +63,29 @@ class Learner:
         *,
         train: bool = True,
         epochs: int = 1,
-        learning_rate: float = 0.02,
+        learning_rate: float = 0.0005,
     ) -> dict[str, object]:
         chunks = self._chunks(text)
+        replay_texts = self.store.recent_documents(limit=4) if train else []
         for chunk in chunks:
             self.store.add_document(source, chunk)
-        losses = self.model.train_text(text, epochs=epochs, learning_rate=learning_rate) if train else []
+        losses = (
+            self.model.train_text(
+                text,
+                epochs=epochs,
+                learning_rate=learning_rate,
+                replay_texts=replay_texts,
+            )
+            if train and chunks
+            else []
+        )
         return {
             "source": source,
             "characters": len(text),
             "chunks": len(chunks),
-            "trained": train,
+            "trained": bool(train and chunks),
             "loss": losses[-1] if losses else None,
+            "replay_documents": len(replay_texts),
         }
 
     def crawl(

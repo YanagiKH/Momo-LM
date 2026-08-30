@@ -5,6 +5,9 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 from momo_lm.config import MomoConfig
+from momo_lm.knowledge import KnowledgeStore
+from momo_lm.learner import Learner
+from momo_lm.model import ModelShape, NeuralTextModel
 from momo_lm.runtime import MomoRuntime
 
 
@@ -27,6 +30,56 @@ class _Site(BaseHTTPRequestHandler):
 
 
 class LearnerTests(unittest.TestCase):
+    def test_incremental_training_replays_recent_documents(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            store = KnowledgeStore(Path(directory) / "knowledge.db")
+            model = NeuralTextModel(
+                ModelShape(
+                    context_length=6,
+                    embedding_size=8,
+                    hidden_size=16,
+                    attention_heads=2,
+                    neuron_groups=4,
+                    seed=21,
+                )
+            )
+            learner = Learner(model, store)
+            try:
+                learner.ingest_text("old retained fact", source="old", train=False)
+                result = learner.ingest_text(
+                    "new domain fact",
+                    source="new",
+                    train=True,
+                    epochs=1,
+                    learning_rate=0.003,
+                )
+                self.assertEqual(result["replay_documents"], 1)
+                self.assertTrue(result["trained"])
+                self.assertEqual(model.training_metadata["last_run"]["replay_documents"], 1)
+            finally:
+                store.close()
+
+    def test_incremental_training_uses_safe_adamw_default(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            store = KnowledgeStore(Path(directory) / "knowledge.db")
+            model = NeuralTextModel(
+                ModelShape(
+                    context_length=6,
+                    embedding_size=8,
+                    hidden_size=16,
+                    attention_heads=2,
+                    neuron_groups=4,
+                    seed=22,
+                )
+            )
+            try:
+                Learner(model, store).ingest_text("safe default", train=True)
+                self.assertEqual(
+                    model.training_metadata["optimizer_config"]["learning_rate"], 0.0005
+                )
+            finally:
+                store.close()
+
     def test_crawler_obeys_scope_and_page_limit(self) -> None:
         site = ThreadingHTTPServer(("127.0.0.1", 0), _Site)
         thread = threading.Thread(target=site.serve_forever, daemon=True)

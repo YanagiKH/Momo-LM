@@ -3,71 +3,80 @@
 </p>
 
 <p align="center">
-  <strong>從零實作、可訓練、可觀察、可擴充的本機開源 AI 工作台</strong><br>
-  不需要 API Key · 資料預設留在本機 · Windows / Linux / macOS
+  <strong>可檢查、可訓練、可擴充的本機小型 AI 工作台</strong><br>
+  不需要 AI API Key · Python、C、C++、Rust · Windows / Linux / macOS
 </p>
 
 <p align="center">
   <a href="#快速開始">快速開始</a> ·
-  <a href="#在其他專案中直接匯入">Python API</a> ·
-  <a href="#完整訓練指南">訓練指南</a> ·
+  <a href="#python-嵌入-api">Python API</a> ·
+  <a href="docs/TRAINING.md">文字訓練</a> ·
+  <a href="docs/IMAGE_TRAINING.md">圖像訓練</a> ·
+  <a href="docs/AGENTS.md">代理工作</a> ·
   <a href="docs/NATIVE_CORE.md">原生核心</a> ·
-  <a href="docs/MODS.md">Mod 開發</a> ·
-  <a href="docs/ARCHITECTURE.md">架構</a> ·
   <a href="https://github.com/YanagiKH/Momo-LM/releases">Releases</a>
 </p>
 
 > [!IMPORTANT]
-> Momo-LM 不是雲端模型的 API 包裝。內建文字與圖像模型都在專案中從零實作，使用隨附權重在使用者裝置上推論與繼續訓練。這是適合學習、實驗和建立垂直領域原型的小型基礎模型，不宣稱具有大型商用模型的通用能力或寫實圖像品質。
+> Momo-LM 隨附的文字與圖像權重很小，目的是讓一般電腦能檢查推論、訓練、權重與工具執行的完整路徑。專案沒有提出可與市場主流大型語言模型或擴散模型同級的評測證據。文字評估資料與 starter corpus 有重疊，不是獨立 held-out benchmark；它能證明訓練程式降低固定資料上的 next-token loss，不能證明日常對話品質或通用推理能力。圖像模型是小型座標網路，不是 diffusion model。
 
-## Momo-LM 是什麼
+## 已實作的範圍
 
-Momo-LM 把「模型、訓練、知識庫、對話、圖像、語音與擴充模組」放在同一個易用的本機工作台。安裝後即可使用隨附的基礎權重對話；再把教材、文件、問答或網站內容餵給它，逐步建立個人助理、公司內部知識模型或特定領域專家。
+Momo-LM 在本機整合文字生成、檢索記憶、增量訓練、圖像生成與訓練、離線語音、受限代理工作、Mods、CLI、Web UI 與 Python API。它不包裝雲端 AI 服務，也不會要求 OpenAI、Anthropic 或其他 AI 供應商的 API Key。
 
-它刻意保持模型結構透明：文字核心是 184,131 參數的 UTF-8 位元組神經語言模型，使用 gated mixed-activation 神經元組、殘差上下文路徑、softmax、完整反向傳播、梯度裁剪與 mini-batch SGD。矩陣密集工作可由 Rust 或 C/C++ 原生核心執行，沒有可用編譯器時則安全退回 NumPy。權重使用不執行任意程式碼的壓縮 `.npz` 格式保存。
-
-<p align="center"><img src="docs/assets/chat-workbench.svg" alt="Momo-LM 對話工作台" width="100%"></p>
-
-## 主要功能
-
-| 功能 | 實作方式 | 是否需要網路 |
+| 功能 | 實作 | 預設網路行為 |
 |---|---|---:|
-| 基本對話與反問 | 本機神經文字模型 + 本機檢索記憶 + 釐清問題策略 | 否 |
-| 原生矩陣與推理 | Rust safe kernels、C 分塊張量核心、C++ 融合神經元組 | 否 |
-| 自主增量學習 | 每次允許的對話可更新權重並保存新檢查點 | 否 |
-| 餵入文字與領域資料 | 切塊寫入 SQLite，選擇是否同步訓練 | 否 |
-| 網頁學習 | 由使用者提供起始網址，遵守 `robots.txt`、同網域、頁數與大小限制 | 僅此功能 |
-| 圖像生成 | 內建 TinyCanvas 提示詞條件座標神經網路，輸出 128–1024 px PNG | 否 |
-| 文字轉語音 | Windows SAPI、Linux eSpeak 或內建波形後備引擎 | 否 |
-| 聊天與訓練介面 | 零前端框架、由本機 HTTP 服務提供 | 否 |
-| 權重觀察 | 顯示層形狀、參數量、均值、標準差、範圍、稀疏率與訓練統計 | 否 |
-| Mods 擴充 | 將可信任的 Python 檔放入 `~/.momo-lm/mods/` 後重新載入 | 否 |
-| CLI 自動化 | `chat`、`train`、`ingest`、`crawl`、`image`、`tts`、`inspect` | 視命令而定 |
-| Python 嵌入 | `import momo_lm` 或相容入口 `import MomoLM` | 否 |
+| 文字生成 | 223,835 參數的 UTF-8 byte 模型；attention pooling、RMSNorm、8 組 gated neurons、residual output | 無 |
+| 文字訓練 | deterministic AdamW、gradient clipping、replay、validation、原子 checkpoint | 無 |
+| 本機知識 | SQLite 文件切塊、來源標記、CJK bigram 與關鍵詞檢索 | 無 |
+| 圖像生成 | 3,963 參數的提示詞條件座標網路；anime、manga、illustration、realistic conditioning | 無 |
+| 圖像訓練 | 授權 manifest、來源雜湊、deterministic NumPy backprop、validation | 無 |
+| 原生運算 | C/C++/Rust 的矩陣、正規化、RoPE、attention、量化與取樣核心 | 無 |
+| 代理工作 | training、coding、workplace、copilot profiles；白名單工具與一次性核准 | 無 |
+| 文字轉語音 | Windows SAPI、Linux eSpeak，或測試用波形後備 | 無 |
+| 網頁學習 | 使用者提供 URL 後才執行，同網域、`robots.txt`、頁數與大小限制 | 有 |
+| Mods | 使用者放入指定目錄的可信任 Python 程式碼 | 由 Mod 決定 |
 
-<p align="center"><img src="docs/assets/training-workbench.svg" alt="Momo-LM 訓練與權重觀察" width="100%"></p>
+代理工具不包含任意 shell、背景上網、電子郵件傳送、雲端帳號操作或車輛／機器的實體控制。`workplace` 與 `copilot` 是本機檔案和模型工作流程，不是駕駛或自動操作外部系統的功能。
+
+<p align="center"><img src="docs/assets/chat-workbench.svg" alt="Momo-LM 對話工作台示意" width="100%"></p>
+
+## 內附權重與評估解讀
+
+安裝時會複製兩個安全 NPZ checkpoint：
+
+| 檔案 | 格式 | 參數 | 用途 |
+|---|---:|---:|---|
+| `momo-text-base.npz` | v3 | 223,835 | next-token 生成與繼續訓練 |
+| `momo-image-base.npz` | v2 | 3,963 | 四種風格條件的座標式圖像生成 |
+
+Checkpoint 以 `allow_pickle=False` 載入。文字 v3 和圖像 v2 都保存張量形狀、dtype、byte 數與 SHA-256 manifest；載入器會拒絕缺少張量、形狀不符、非有限數值、解壓後過大或雜湊不符的檔案。兩種模型都使用原子替換保存；文字模型另外維護 last-good checkpoint 供載入失敗時回復。
+
+可重現的訓練設定、評估定義、權重 SHA-256 與環境記錄放在 [`evals/`](evals/)。閱讀數字時請注意：
+
+- 文字 validation 與專案 starter corpus 有內容重疊，不是未見資料。
+- NLL、perplexity 與 token top-1 accuracy 衡量 next-token 預測，不衡量事實正確性、對話連貫性或安全性。
+- 圖像 loss 衡量固定訓練樣本的像素／特徵重建，不是人類偏好、FID 或寫實品質評測。
+- 基礎文字 checkpoint 的直接自由生成仍可能重複、偏題或產生亂碼。文件檢索能改善已匯入事實的回答，但不能補足模型容量。
 
 ## 快速開始
 
-### 方法一：Windows / Linux 安裝程式
+### 從原始碼安裝
 
-1. 前往 [Releases](https://github.com/YanagiKH/Momo-LM/releases) 下載最新版。
-2. Windows 執行 `Momo-LM-Setup-Windows-x64.exe`；Linux 執行 `Momo-LM-Setup-Linux-x64.run`。
-3. 啟動 `Momo-LM`，瀏覽器會自動開啟 `http://127.0.0.1:7860`。
-
-安裝程式由每個 `v*` 標籤的 GitHub Actions 從相同原始碼重新建置，並自動附加到該 GitHub Release。
-
-### 方法二：從原始碼安裝（所有平台）
-
-需求：Python 3.10 以上、Git。
+需求：Python 3.10 以上。C/C++ 與 Rust toolchain 是可選項；缺少編譯器時會安裝 NumPy reference backend。
 
 ```bash
 git clone https://github.com/YanagiKH/Momo-LM.git
 cd Momo-LM
 python -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -e .
+momo init
+momo serve
 ```
 
-Windows PowerShell：
+Windows PowerShell 的啟用命令是：
 
 ```powershell
 .\.venv\Scripts\Activate.ps1
@@ -77,134 +86,139 @@ momo init
 momo serve
 ```
 
-Linux / macOS：
+瀏覽器介面預設位於 `http://127.0.0.1:7860`。
 
-```bash
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -e .
-momo init
-momo serve
-```
+### 使用安裝程式
 
-### 方法三：一鍵開發環境腳本
+每個 `v*` Release 會從對應 tag 建置：
 
-```powershell
-# Windows PowerShell
-.\scripts\install.ps1
-```
+- `Momo-LM-Setup-Windows-x64.exe`
+- `Momo-LM-Setup-Linux-x64.run`
+- `SHA256SUMS.txt`
 
-```bash
-# Linux / macOS
-./scripts/install.sh
-```
+請從 [GitHub Releases](https://github.com/YanagiKH/Momo-LM/releases) 下載並核對 SHA-256。未建立新 tag 前，`main` 上的功能不會出現在舊 Release。
 
-## 在其他專案中直接匯入
+## Python 嵌入 API
 
-套件發行名稱可使用連字號 `Momo-LM`，但 Python 的 `import` 文法不允許模組名稱包含 `-`。因此正式匯入名稱是 `momo_lm`，另提供大小寫相容入口 `MomoLM`：
+Python 識別字不能包含連字號，因此套件發行名是 `Momo-LM`，合法匯入名稱是 `momo_lm`。另保留 `MomoLM` 相容入口。
 
 ```python
 import momo_lm
 
 with momo_lm.load_model(home="./momo-data") as model:
-    reply = model.chat("你好，請介紹 Momo-LM", learn=False)
-    print(reply)
+    result = model.chat_result("你好，請簡短介紹自己", learn=False)
+    print(result["response"])
 
-    model.ingest("產品代號 Peach 是本機推理引擎。", source="product-manual")
-    model.train("User: 產品代號 Peach 是什麼？\nMomo: 它是本機推理引擎。", epochs=3)
-    model.generate_image("pink neural city", "momo.png", width=512, height=512, seed=42)
+    model.ingest(
+        "產品代號 Peach 是本機推理引擎。",
+        source="product-manual-v1",
+    )
+    model.train(
+        "User: 產品代號 Peach 是什麼？\nMomo: 它是本機推理引擎。",
+        epochs=3,
+    )
+    model.generate_image(
+        "雨夜車站的漫畫分鏡",
+        "station.png",
+        style="manga",
+        negative_prompt="文字浮水印",
+        width=512,
+        height=512,
+        seed=42,
+    )
 ```
 
-偏好類別式名稱時可使用完全相同的 API：
+相容入口：
 
 ```python
 import MomoLM
 
-model = MomoLM.MomoLM.from_pretrained("./momo-data")
-try:
-    print(model("Momo 現在使用哪個運算核心？", learn=False))
+with MomoLM.MomoLM.from_pretrained("./momo-data") as model:
+    print(model("目前使用哪個運算後端？", learn=False))
     print(model.inspect()["compute_backend"])
-finally:
-    model.close()
 ```
 
-公開介面包含 `chat`、`chat_result`、`train`、`ingest`、`generate_image`、`speak`、`inspect` 與 context manager。模型不會呼叫雲端 API，也不需要 API Key。
+公開 API 包含對話、訓練、資料匯入、圖像、語音、狀態與 context manager。代理 API 與權限模型見 [docs/AGENTS.md](docs/AGENTS.md)。
 
-## 使用聊天工作台
+## Web 工作台
 
-執行 `momo serve` 後可使用六個頁面：
+`momo serve` 提供本機單頁介面：
 
-1. **對話**：檢索已學習資料後回答，可隨時關閉「自我學習」。
-2. **學習資料**：貼入文字或輸入網站起始網址，選擇只加入檢索記憶或同時更新權重。
-3. **圖像生成**：輸入提示詞、尺寸與選用 seed，完全在本機產生 PNG。
-4. **文字轉語音**：輸入內容與語速，輸出可下載的 WAV。
-5. **權重觀察**：查看文字模型和圖像模型參數、訓練步數與知識庫數量。
-6. **Mods**：查看已載入模組、命令與隔離的載入錯誤，並可重新載入。
+1. 對話：檢索本機資料後生成回答，並可關閉增量學習。
+2. 代理：建立工作、查看計畫／事件／結果、核准單一受限動作或取消。
+3. 資料：匯入 UTF-8 文字，或對明確 URL 執行受控 crawl。
+4. 圖像：選擇 style、negative prompt、quality、steps、尺寸與 seed。
+5. 語音：使用作業系統離線 TTS 產生 WAV。
+6. 權重：顯示模型形狀、參數、訓練計數、張量統計與後端。
+7. Mods：列出已載入命令、鉤子與隔離的錯誤。
 
-只想使用終端也可以：
+<p align="center"><img src="docs/assets/training-workbench.svg" alt="Momo-LM 訓練與權重觀察示意" width="100%"></p>
 
-```bash
-momo chat
-momo chat "什麼是本機優先 AI？"
-momo inspect
-```
+所有 `/api/` 請求以及私有的 `/generated/`、`/speech/` 產物都需要 `X-Momo-Token`。Loopback 啟動未設定 token 時，伺服器會建立暫時 session token 並透過 URL fragment 交給工作台；綁定非 loopback 位址則必須明確設定持久 token。遠端部署還需 TLS、反向代理、防火牆與流量限制。`Host`、`Origin` 與 token 檢查不能取代安全的網路部署。
 
-## 完整訓練指南
+## 文字訓練
 
-### 1. 準備資料
-
-使用 UTF-8 純文字。建議每個樣本具有明確上下文與答案，並保留來源、授權和版本。對話資料可採用：
-
-```text
-User: 什麼是領域中的術語 A？
-Momo: 術語 A 是……
-User: 它適用在哪些情況？
-Momo: ……
-```
-
-開始前應移除：重複段落、密碼與個資、沒有授權的內容、互相矛盾且未標記來源的答案。把 10–20% 高品質樣本保留為驗證集，不要拿去訓練。
-
-### 2. 建立可回復的權重版本
-
-```bash
-cp ~/.momo-lm/weights/momo-text-base.npz checkpoints/before-domain-training.npz
-```
-
-Windows 可使用：
-
-```powershell
-Copy-Item "$HOME\.momo-lm\weights\momo-text-base.npz" "checkpoints\before-domain-training.npz"
-```
-
-### 3. 先加入檢索記憶
-
-這一步速度快，適合文件知識，且不會因訓練破壞既有語言能力：
+先把經常變動、需要來源的事實放入知識庫，再用小批高品質對話調整語氣與回應模式：
 
 ```bash
 momo ingest data/domain-notes.txt
-```
-
-在 UI 中取消「同時訓練」可得到相同效果。
-
-### 4. 再更新模型權重
-
-```bash
-momo train data/domain-dialogues.txt --epochs 5 --learning-rate 0.02
-```
-
-從 3–5 epochs 與 `0.01–0.03` 學習率開始。資料很少時不要盲目增加 epochs；損失下降不代表答案一定更好。每次只加入一個可辨識的資料版本，完成後用固定問題集比較。
-
-### 5. 驗證與回復
-
-```bash
-momo chat "驗證問題一"
-momo chat "驗證問題二"
+momo train data/domain-dialogues.txt --epochs 3 --learning-rate 0.0005
 momo inspect
 ```
 
-至少檢查：已知答案、未知問題是否誠實、原有基本對話、不同語言輸入、敏感資料是否被意外學入。如果結果退步，停止服務後把先前檢查點複製回 `~/.momo-lm/weights/momo-text-base.npz`。
+每次實驗應使用獨立 home，保存資料雜湊、設定、起始 checkpoint 與固定評測：
 
-更完整的資料切分、課程式訓練、垂直專家策略、指標與除錯方式請見 [docs/TRAINING.md](docs/TRAINING.md)。
+```bash
+momo --home ./experiments/support init
+momo --home ./experiments/support train data/support.txt --epochs 3
+momo --home ./experiments/support inspect > experiments/support/result.json
+```
+
+不要把相鄰段落拆到 train 和 validation。內附 validation 是建置回歸測試，不能代替你的 held-out dataset。完整流程見 [docs/TRAINING.md](docs/TRAINING.md)。
+
+## 圖像生成與訓練
+
+```bash
+momo image "午後窗邊的角色插畫" \
+  --style illustration \
+  --negative-prompt "文字, 浮水印" \
+  --output character.png \
+  --width 512 --height 512 --seed 42
+```
+
+支援的 conditioning label 是 `anime`、`manga`、`illustration`、`realistic`。`realistic` 是訓練類別名稱，不代表輸出已達攝影寫實品質。
+
+圖像訓練 manifest 必須逐筆記錄相對檔案路徑、prompt、style、license、source 與 SHA-256。訓練器會拒絕路徑逸出、雜湊不符、未知 style、缺少授權或過大的影像。完整 schema、資料切分與命令見 [docs/IMAGE_TRAINING.md](docs/IMAGE_TRAINING.md)。
+
+<p align="center"><img src="docs/assets/image-training.svg" alt="Momo-LM 圖像生成與訓練示意" width="100%"></p>
+
+## 代理工作
+
+代理把目標拆成固定類型的步驟，執行已註冊工具並把事件寫入 SQLite。可用 profiles：
+
+- `training`：檢查資料與執行受限訓練流程。
+- `coding`：讀取工作區、產生 patch 建議與測試報告。
+- `workplace`：整理本機文件與建立輸出草稿。
+- `copilot`：組合唯讀檢查與明確核准的寫入動作。
+
+所有 profile 預設唯讀。寫檔或啟動訓練等動作需要該工作宣告 capability，且需要精確對應的一次性 approval。每項工作有步驟、工具呼叫與 goal 字元數 budgets；個別工具另有限制檔案與訓練輸入大小。工作可取消，重啟後能從持久化狀態恢復。詳情見 [docs/AGENTS.md](docs/AGENTS.md)。
+
+<p align="center"><img src="docs/assets/agent-workbench.svg" alt="Momo-LM 受限代理工作示意" width="100%"></p>
+
+## 原生運算後端
+
+Python 路由依序嘗試 Rust、C++，最後退回 NumPy。可固定後端：
+
+```bash
+MOMO_BACKEND=rust momo backend
+MOMO_BACKEND=cpp momo backend
+MOMO_BACKEND=numpy momo backend
+momo benchmark --size 512 --rounds 10
+```
+
+原生 ABI v2 包含 blocked matmul、stable softmax、LayerNorm、RMSNorm、RoPE、online causal attention、Q8 row quantization、deterministic top-k/temperature sampler 與 fused routed neuron groups。Python、C++ 和 Rust 路徑以 NumPy reference 做數值一致性測試。
+
+`MOMO_REQUIRE_NATIVE=1` 會讓缺少或不相容的原生核心直接失敗，CI 與 Release 使用此設定。一般來源安裝未找到 toolchain 時仍可使用 NumPy。ABI、形狀契約與建置命令見 [docs/NATIVE_CORE.md](docs/NATIVE_CORE.md)。
 
 ## 受控網頁學習
 
@@ -213,125 +227,48 @@ momo crawl https://example.com/docs --max-pages 8
 momo crawl https://example.com/docs --max-pages 8 --train
 ```
 
-安全邊界：
+- 只有使用者執行 crawl 後才會連線。
+- 只跟隨起始站點同網域的 HTTP/HTTPS 連結。
+- 尊重 `robots.txt`，限制頁數、回應大小與 timeout。
+- 預設只寫入知識庫；`--train` 才更新權重。
+- 操作者仍須確認網站條款、著作權、個資與資料品質。
 
-- 只有使用者明確執行後才會連網，不會在背景任意瀏覽。
-- 只追蹤起始網址的同網域 HTTP/HTTPS 連結。
-- 尊重網站 `robots.txt`，單頁最多讀取 2 MB，預設最多 8 頁。
-- 預設只加入本機知識庫；加上 `--train` 才更新權重。
-- 使用者必須自行確認資料的著作權、服務條款與隱私要求。
+此 crawler 不會提供給代理工具，因此代理不能自行上網。
 
-## 本機圖像生成
-
-```bash
-momo image "pink moon above a quiet cyber city" --output moon.png --width 768 --height 768 --seed 42
-```
-
-TinyCanvas 是輕量、可觀察的提示詞條件座標網路，適合背景、色彩概念、紋理與抽象圖像。它不是大型擴散模型。需要寫實能力時，可透過 Mod 掛接使用者自行下載、完全在本機執行的 diffusion checkpoint，而不需 API Key。
-
-## 離線文字轉語音
+## 離線語音
 
 ```bash
 momo tts "你好，我是 Momo。" --output momo.wav --rate 170
 ```
 
-- Windows：使用內建 SAPI 聲音。
-- Linux：優先使用 `espeak-ng` 或 `espeak`；例如 Ubuntu 可執行 `sudo apt install espeak-ng`。
-- 若未找到系統語音，仍會輸出可用來驗證流程的 Momo 波形，但不具自然人聲品質。
+Windows 使用 SAPI；Linux 優先使用 `espeak-ng` 或 `espeak`。找不到系統語音時會輸出測試流程用的波形，不具自然人聲品質。
 
-## 自訂 Mods
+## Mods
 
-將可信任的 `.py` 檔放入 `~/.momo-lm/mods/`。把安裝時產生的 `example_tools.py.example` 重新命名為 `example_tools.py`，然後在 UI 按「重新載入」即可使用 `/time`。
-
-```python
-from momo_lm.mods import ModSpec
-
-def register():
-    return ModSpec(
-        name="My Mod",
-        version="1.0.0",
-        commands={"/hello": lambda name: f"Hello, {name or 'Momo user'}!"},
-    )
-```
-
-Mods 是本機 Python 程式碼，擁有與 Momo-LM 相同的使用者權限，只能安裝自己撰寫或已審查的模組。完整介面、鉤子與測試方式請見 [docs/MODS.md](docs/MODS.md)。
-
-## 模型架構
-
-```mermaid
-flowchart TD
-    A["文字或網站資料"] --> B["清理與重疊切塊"]
-    B --> C["SQLite 本機知識庫"]
-    B --> D["UTF-8 Byte Tokenizer"]
-    D --> E["Gated 神經元組"]
-    E --> J["Rust / C++ / NumPy 後端"]
-    C --> F["檢索與來源"]
-    E --> G["下一 Token 生成"]
-    F --> H["Momo Runtime"]
-    G --> H
-    H --> I["CLI / Web UI / Mods"]
-```
-
-| 元件 | 基礎規格 |
-|---|---|
-| Tokenizer | 259 token：PAD、BOS、EOS、256 個 UTF-8 bytes |
-| 上下文 | 24 tokens，保留位置順序的 embedding 串接 |
-| 文字模型 | 32 維 embedding、96 維 gated mixed-activation neuron groups、殘差路徑、softmax output |
-| 文字參數 | 184,131，可在權重頁直接驗證 |
-| 原生核心 | Rust memory-safe kernels、C blocked matmul/softmax/layer norm、C++ fused inference |
-| 後端順序 | `rust` → `cpp` → `numpy`，可用 `MOMO_BACKEND` 固定 |
-| 圖像模型 | 64 維提示特徵、24 維 latent、64 維 coordinate hidden |
-| 權重格式 | `numpy.savez_compressed`；讀取時 `allow_pickle=False` |
-| 記憶 | SQLite 文件片段與最近 1,000 輪對話 |
-
-更多設計取捨與資料流請見 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。
-
-## CLI 參考
-
-```text
-momo serve [--host HOST] [--port PORT] [--no-browser]
-momo chat [MESSAGE]
-momo train FILE [--epochs N] [--learning-rate RATE]
-momo ingest FILE [--train]
-momo crawl URL [--max-pages N] [--train]
-momo image PROMPT [--output FILE] [--width N] [--height N] [--seed N]
-momo tts TEXT [--output FILE] [--rate N]
-momo inspect
-momo backend
-momo benchmark [--size N] [--rounds N]
-momo init [--force]
-```
-
-所有命令可用 `--home PATH` 指向獨立實驗目錄，例如：
-
-```bash
-momo --home ./experiments/legal-expert init
-momo --home ./experiments/legal-expert train legal.txt --epochs 5
-momo --home ./experiments/legal-expert serve
-```
+可信任的 `.py` 檔可放入 `~/.momo-lm/mods/`。Mods 與主程式具有相同使用者權限，不是 sandbox。只載入自己撰寫或完整審查的程式碼。介面與測試方式見 [docs/MODS.md](docs/MODS.md)。
 
 ## 專案結構
 
 ```text
 momo_lm/
-├── api.py            # 可嵌入其他專案的穩定 MomoLM API
-├── backend.py        # Rust / C++ / NumPy 後端選擇與張量介面
-├── model.py          # 從零實作的文字神經模型與反向傳播
-├── image_model.py    # TinyCanvas 本機圖像網路
-├── runtime.py        # 對話、檢索、學習與工具協調
-├── learner.py        # 文字切塊與受控網站讀取
-├── knowledge.py      # SQLite 本機記憶
-├── mods.py           # 動態 Mod 介面與錯誤隔離
-├── server.py         # 本機 JSON API 與工作台服務
-├── speech.py         # 離線 TTS 後端
-├── web/              # 響應式聊天與訓練介面
-└── assets/weights/   # 可直接使用和繼續訓練的基礎權重
+├── model.py           # v3 文字模型、checkpoint 與生成
+├── training.py        # deterministic AdamW 與評估
+├── image_model.py     # v2 座標圖像模型
+├── image_training.py  # manifest 驗證與圖像 backprop
+├── agent*.py          # 代理、工具與持久化工作儲存
+├── backend.py         # Rust / C++ / NumPy 路由
+├── runtime.py         # 對話、檢索、訓練與工具整合
+├── server.py          # 本機 HTTP API 與部署邊界
+├── web/               # 無前端框架的工作台
+└── assets/weights/    # 隨附的小型基礎 checkpoint
 native/
-├── include/          # 穩定 C ABI
-├── src/              # C 張量核心與 C++ 推理框架
-├── python/           # CPython 原生擴充
-└── rust/             # 無外部 crate 的 memory-safe kernels
+├── include/           # C ABI v2
+├── src/               # C kernels 與 C++ runtime
+├── python/            # CPython bridge
+└── rust/              # Rust kernels 與 C ABI
 ```
+
+架構與資料流見 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)。
 
 ## 開發與驗證
 
@@ -340,25 +277,33 @@ python -m pip install -e ".[dev]"
 python scripts/build_native.py --release
 python -m compileall -q momo_lm scripts tests
 ruff check .
+python scripts/validate_repo.py
 python -m unittest discover -s tests -v
 python -m build
 ```
 
-GitHub Actions 會在 Windows 與 Linux 上分別編譯 C、C++、Rust 與 CPython 擴充，執行 Rust Clippy、CMake/CTest、原生數值一致性、Python/HTTP 整合測試、wheel/sdist 與安裝後 smoke test。CI 和 Release 設定 `MOMO_REQUIRE_NATIVE=1`，任何原生後端缺失都會直接失敗；建立 `v*` 標籤時才會產生兩套可直接安裝的資產。
+GitHub Actions 執行：
 
-## 目前限制與路線圖
+- Windows／Linux × Python 3.10／3.12 測試。
+- CMake／CTest、Cargo test、rustfmt 與 Clippy `-D warnings`。
+- C/C++ AddressSanitizer 與 UndefinedBehaviorSanitizer。
+- 從乾淨 sdist 模擬沒有 C/C++／Rust 編譯器的 NumPy-only 安裝。
+- PyInstaller Windows／Linux 啟動測試，以及 Inno Setup 實際編譯。
+- CodeQL Python 與 C/C++ 分析。
 
-- 目前基礎文字模型仍小，gated 神經元組與原生核心提升了表達能力、可擴充性與效率，但不等同大型商用 Transformer 的知識量。
-- TinyCanvas 產生抽象圖像，不是寫實擴散模型。
-- 增量 SGD 適合小批資料；大型資料集預計加入 mini-batch dataset streaming、AdamW 與驗證儀表板。
-- 規劃中的相容 Mod：本機 GGUF 推論、本機 diffusion checkpoint、更多離線 TTS 引擎與版本化評估套件。
+所有 workflow Action 固定到完整 commit SHA，並採用最小 `GITHUB_TOKEN` 權限。建議的分支保護設定與 required checks 見 [docs/BRANCH_PROTECTION.md](docs/BRANCH_PROTECTION.md)。
 
-## 安全與隱私
+## 已知限制
 
-請勿把密碼、API Token、未授權個資或機密文件放入訓練資料。對外開放 `--host 0.0.0.0` 前應自行加入反向代理、驗證與防火牆；預設僅監聽 `127.0.0.1`。漏洞回報方式與完整威脅邊界請見 [SECURITY.md](SECURITY.md)。
+- 223,835 個文字參數不足以承載大型模型的世界知識或長鏈推理；基礎自由生成仍不穩定。
+- 目前評估不是獨立 held-out、人工偏好或安全 benchmark。
+- 3,963 個圖像參數適合驗證訓練與風格 conditioning，不足以產生市場級動漫、漫畫、插畫或照片。
+- 代理 planner 是受限、可重現的工作執行器，不會自行理解開放式職場流程，也不操作外部帳號或實體設備。
+- Mods 是可信任程式碼，可能繞過應用層限制。
+- 對外服務需要操作者自行配置 TLS、反向代理、防火牆與主機維護。
 
-## 貢獻與授權
+## 安全、貢獻與授權
 
-歡迎提交可重現的錯誤、測試、文件、模型改良與安全的 Mod 範例。請先閱讀 [CONTRIBUTING.md](CONTRIBUTING.md)。
+不要把密碼、token、個資、機密文件或沒有再散布權的資料放進 prompts、manifest、checkpoint、設定檔、issue 或 Mods。漏洞請依 [SECURITY.md](SECURITY.md) 私下回報；一般變更流程見 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
-Momo-LM 以 [MIT License](LICENSE) 授權。
+Momo-LM 以 [MIT License](LICENSE) 授權。資料集、第三方 Mods、外部 checkpoint 與系統語音可能有各自授權，使用者需逐項確認。

@@ -68,3 +68,7 @@ User: 可以查看模型嗎？
 Momo: 可以。權重頁面會顯示每層形狀、參數量、平均值、標準差與訓練步數。
 User: 先做什麼？
 Momo: 先明確定義一個可驗證的小目標，再準備資料與基準測試，最後逐步擴充。
+User: Help me write code.
+Momo: Share the goal, language, inputs, constraints, and tests. I will propose a small plan, implement it, and verify each result.
+User: Thanks.
+Momo: Gladly.

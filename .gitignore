@@ -13,6 +13,7 @@ release/
 *.wav
 *.png
 !docs/assets/*.png
+*.npz.last-good
 data/runtime/
 checkpoints/*
 !checkpoints/.gitkeep
