@@ -38,9 +38,7 @@ fn allocate_f32(count: usize) -> Result<Vec<f32>, i32> {
         return Err(OVERFLOW);
     }
     let mut values = Vec::new();
-    values
-        .try_reserve_exact(count)
-        .map_err(|_| OUT_OF_MEMORY)?;
+    values.try_reserve_exact(count).map_err(|_| OUT_OF_MEMORY)?;
     values.resize(count, 0.0);
     Ok(values)
 }
@@ -50,9 +48,7 @@ fn allocate_f64(count: usize) -> Result<Vec<f64>, i32> {
         return Err(OVERFLOW);
     }
     let mut values = Vec::new();
-    values
-        .try_reserve_exact(count)
-        .map_err(|_| OUT_OF_MEMORY)?;
+    values.try_reserve_exact(count).map_err(|_| OUT_OF_MEMORY)?;
     values.resize(count, 0.0);
     Ok(values)
 }
@@ -98,8 +94,7 @@ fn matmul(
                 for depth in inner_block..inner_end {
                     let value = left[row * inner + depth];
                     for column in 0..columns {
-                        output[row * columns + column] +=
-                            value * right[depth * columns + column];
+                        output[row * columns + column] += value * right[depth * columns + column];
                     }
                 }
             }
@@ -488,9 +483,7 @@ fn attention(
             }
             for dimension in 0..head_size {
                 let normalized = accumulator[dimension] / denominator;
-                if !normalized.is_finite()
-                    || normalized.abs() > f64::from(f32::MAX)
-                {
+                if !normalized.is_finite() || normalized.abs() > f64::from(f32::MAX) {
                     return NUMERIC_ERROR;
                 }
                 output[query_offset + dimension] = normalized as f32;
@@ -654,8 +647,9 @@ pub unsafe extern "C" fn momo_rust_quantize_q8_f32(
         };
         scales[row] = scale;
         for column in 0..columns {
-            output[offset + column] =
-                (input[offset + column] / scale).round().clamp(-127.0, 127.0) as i8;
+            output[offset + column] = (input[offset + column] / scale)
+                .round()
+                .clamp(-127.0, 127.0) as i8;
         }
     }
     OK
@@ -909,8 +903,8 @@ pub unsafe extern "C" fn momo_rust_neuron_group_f32(
             if !projected.is_finite() || !gated.is_finite() {
                 return NUMERIC_ERROR;
             }
-            output[index] = activate(projected, column / group_size) * sigmoid(gated)
-                + shortcut[index];
+            output[index] =
+                activate(projected, column / group_size) * sigmoid(gated) + shortcut[index];
         }
     }
     if finite_values(output) {
@@ -930,14 +924,7 @@ mod tests {
         let right = [5.0, 6.0, 7.0, 8.0];
         let mut output = [0.0; 4];
         let status = unsafe {
-            momo_rust_matmul_f32(
-                left.as_ptr(),
-                right.as_ptr(),
-                output.as_mut_ptr(),
-                2,
-                2,
-                2,
-            )
+            momo_rust_matmul_f32(left.as_ptr(), right.as_ptr(), output.as_mut_ptr(), 2, 2, 2)
         };
         assert_eq!(status, OK);
         assert_eq!(output, [19.0, 22.0, 43.0, 50.0]);

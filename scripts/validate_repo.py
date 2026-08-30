@@ -15,7 +15,10 @@ import tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-os.environ.setdefault("MOMO_BACKEND", "numpy")
+# The recorded checkpoint metrics use the deterministic NumPy reference path.
+# Native availability is verified separately before this script runs in CI.
+os.environ["MOMO_BACKEND"] = "numpy"
+os.environ.pop("MOMO_REQUIRE_NATIVE", None)
 
 import momo_lm  # noqa: E402
 from momo_lm.evaluation import evaluate_text  # noqa: E402
