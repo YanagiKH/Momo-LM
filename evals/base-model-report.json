@@ -122,6 +122,6 @@
         }
       }
     },
-    "interpretation": "The overlapping four-image reconstruction loss verifies backprop and style conditioning. It is not FID, prompt-alignment, human-preference, anime quality, illustration quality or photographic-realism evidence."
+    "interpretation": "With style labels supplied as inputs, the recorded run lowers reconstruction loss on the overlapping four-image set. Each label is confounded with one image, so this does not isolate or establish the effect of style conditioning. It is not FID, prompt-alignment, human-preference, anime quality, illustration quality or photographic-realism evidence."
   }
 }

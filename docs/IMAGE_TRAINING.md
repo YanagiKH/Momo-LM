@@ -1,6 +1,6 @@
 # 圖像模型與訓練
 
-Momo-LM 的 TinyCanvas v2 是 3,963 參數的提示詞條件座標網路。它用來展示本機圖像資料驗證、風格 conditioning、解析 backprop、checkpoint 與 tiled rendering。它不是 diffusion model，也沒有市場級動漫、漫畫、插畫或攝影寫實品質的評測證據。
+Momo-LM 的 TinyCanvas v2 是 3,963 參數的提示詞條件座標網路。它用來展示本機圖像資料驗證、風格標籤 conditioning 的程式路徑、解析 backprop、checkpoint 與 tiled rendering。它不是 diffusion model，也沒有市場級動漫、漫畫、插畫或攝影寫實品質的評測證據。
 
 ## 模型規格
 
@@ -16,15 +16,15 @@ Momo-LM 的 TinyCanvas v2 是 3,963 參數的提示詞條件座標網路。它�
 
 Styles：`anime`、`manga`、`illustration`、`realistic`。這些是 conditioning labels；`realistic` 不代表照片品質。
 
-Quality 會設定 deterministic supersampling steps：
+`quality` API 參數是 supersampling steps 的預設名稱，不代表經過人類評測的畫質等級：
 
-| Quality | Steps |
+| API value | Supersampling steps |
 |---|---:|
 | `draft` | 1 |
 | `standard` | 2 |
 | `high` | 4 |
 
-也可明確指定 1–8 steps。相同 checkpoint、prompt、style、negative prompt、seed、尺寸與 steps 會產生相同像素。Tile size 只改變批次記憶體，不應改變輸出。
+也可明確指定 1–8 steps。在同一個已記錄的執行環境內，生成流程設計為 deterministic；跨 CPU、BLAS、NumPy、編譯器或平台可能出現浮點差異，因此不保證逐像素一致。Tile size 只改變批次記憶體，不應改變輸出。
 
 ## 生成
 
@@ -169,7 +169,7 @@ Checkpoint SHA-256：`92ccb5f37a946bcc478f8cccca3d2b7edb513d51233061c05a40b7d298
 
 Manifest SHA-256：`f486d944d01277acdb30b7de7cc428bf98be890e376de996a163ca2d60e90229`
 
-這些數字是在同一個四張圖資料上訓練與評估，沒有 held-out image。它們證明實作能降低該 reference set 的 reconstruction loss，不衡量構圖、prompt alignment、FID 或人類偏好。
+這些數字是在同一個四張圖資料上訓練與評估，沒有 held-out image。在 style labels 作為輸入時，該次訓練降低了 reference set 的 reconstruction loss；每個 label 只對應一張圖，因此不能隔離或證明 style conditioning 的效果。這些數字也不衡量構圖、prompt alignment、FID 或人類偏好。
 
 ## 自訂資料建議
 

@@ -19,7 +19,7 @@ The text validation sequence comes from the repository starter corpus and overla
 - per-style reconstruction loss for `anime`, `manga`, `illustration`, and `realistic`
 - training steps, processed examples, and manifest SHA-256
 
-The four procedural reference images are used for both training and evaluation. They check that backprop and style conditioning lower loss on known examples. They are not FID, prompt alignment, human preference, or held-out quality tests.
+The four procedural reference images are used for both training and evaluation. With style labels supplied as inputs, the recorded run lowers reconstruction loss on these known examples. Each label is confounded with one image, so the report does not isolate or establish the effect of style conditioning. These are not FID, prompt alignment, human preference, or held-out quality tests.
 
 ## Reproduce
 

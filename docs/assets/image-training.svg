@@ -22,8 +22,8 @@
     <rect x="94" y="502" width="774" height="48" rx="11" fill="#0c0b18" stroke="#413958"/><text x="114" y="532" fill="#eeeaf5" font-size="14">午後窗邊的角色插畫</text>
     <text x="94" y="589" fill="#928ca4" font-size="12">NEGATIVE PROMPT</text>
     <rect x="94" y="604" width="374" height="48" rx="11" fill="#0c0b18" stroke="#413958"/><text x="114" y="634" fill="#aaa4b5" font-size="14">文字, 浮水印</text>
-    <text x="492" y="589" fill="#928ca4" font-size="12">QUALITY / STEPS / TILE</text>
-    <rect x="492" y="604" width="376" height="48" rx="11" fill="#0c0b18" stroke="#413958"/><text x="512" y="634" fill="#eeeaf5" font-size="14">high　·　4　·　128 px</text>
+    <text x="492" y="589" fill="#928ca4" font-size="12">SUPERSAMPLING PRESET / STEPS / TILE</text>
+    <rect x="492" y="604" width="376" height="48" rx="11" fill="#0c0b18" stroke="#413958"/><text x="512" y="634" fill="#eeeaf5" font-size="14">quality=high　·　4　·　128 px</text>
     <rect x="94" y="706" width="774" height="54" rx="13" fill="url(#pink)"/><text x="481" y="740" text-anchor="middle" fill="#fff" font-size="15" font-weight="700">以固定 seed 產生</text>
     <text x="94" y="795" fill="#898397" font-size="12">Style 是 conditioning label；realistic 不代表攝影寫實品質。</text>
     <rect x="934" y="154" width="442" height="682" rx="22" fill="#141225" stroke="#342e4c"/>
